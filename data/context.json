@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "version": "2.0",
+    "policy": "Only sourced pre-match context. Never edit a finished fixture to improve a historical forecast."
+  },
+  "fixtures": {}
+}
