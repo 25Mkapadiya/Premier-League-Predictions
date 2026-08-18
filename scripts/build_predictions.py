@@ -17,10 +17,16 @@ def main(prior_live=None):
         prev=old.get(fixture_key(f)) or {};oldp=prev.get('prediction');ko=parse_iso(f.get('kickoff'));started=f.get('status') in ('live','final') or (ko is not None and ko<=now)
         if started and oldp:
             f['prediction']=oldp;f['predictionLocked']=True;f['predictionLockedAt']=prev.get('predictionLockedAt') or f.get('kickoff');preserved+=1;locked+=1;continue
-        p=predict_fixture(model,live,f,trained=trained,context=context)
+        # Current player availability is valuable near kickoff, but applying today's
+        # injury list to a fixture months away creates false certainty. Long-range
+        # fixtures use neutral availability and are re-enriched as kickoff approaches.
+        near_term=ko is not None and -1 <= (ko-now).total_seconds()/86400 <= 8
+        source_live=live if near_term else {**live,'teamSignals':{}}
+        p=predict_fixture(model,source_live,f,trained=trained,context=context)
+        p['availabilityWindow']='active' if near_term else 'deferred'
         if started:p['retroGenerated']=True;retro+=1;f['predictionLocked']=True;f['predictionLockedAt']=f.get('kickoff');locked+=1
         else:f['predictionLocked']=False
         f['prediction']=p;generated+=1
-    live.setdefault('meta',{})['predictionEngine']={'version':'3.0','generatedAt':now.isoformat().replace('+00:00','Z'),'trainedModelEnabled':bool(trained.get('enabled')),'trainedModelHoldout':trained.get('holdout'),'generated':generated,'preservedLocked':preserved,'locked':locked,'retroGenerated':retro,'policy':'Forecasts freeze at kickoff. Finished matches are never recalculated with future information.'}
+    live.setdefault('meta',{})['predictionEngine']={'version':'3.0','generatedAt':now.isoformat().replace('+00:00','Z'),'trainedModelEnabled':bool(trained.get('enabled')),'trainedModelHoldout':trained.get('holdout'),'generated':generated,'preservedLocked':preserved,'locked':locked,'retroGenerated':retro,'availabilityHorizonDays':8,'policy':'Forecasts freeze at kickoff. Finished matches are never recalculated with future information.'}
     write_js_assignment(LIVE_PATH,'window.LIVE_DATA = ',live);print(f'Predictions: generated={generated}, preserved={preserved}, locked={locked}, retro={retro}, trained={bool(trained.get("enabled"))}');return 0
 if __name__=='__main__':raise SystemExit(main())
