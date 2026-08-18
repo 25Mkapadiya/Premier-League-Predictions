@@ -3,6 +3,7 @@
 from __future__ import annotations
 import json
 from datetime import datetime,timezone
+from availability_sanitizer import sanitize_team_signals
 from prediction_core import ROOT,load_context,load_js_assignment,parse_iso,predict_fixture,write_js_assignment
 MODEL_PATH=ROOT/'data'/'model.js';LIVE_PATH=ROOT/'data'/'live.js';TRAINED_PATH=ROOT/'data'/'trained_model.json'
 def load_trained():
@@ -11,7 +12,7 @@ def load_trained():
     except json.JSONDecodeError:return {'enabled':False}
 def fixture_key(f):return f"{f.get('home')}__{f.get('away')}__{f.get('matchweek')}"
 def main(prior_live=None):
-    model=load_js_assignment(MODEL_PATH,'window.MODEL_DATA = ');live=load_js_assignment(LIVE_PATH,'window.LIVE_DATA = ');trained=load_trained();context=load_context();now=datetime.now(timezone.utc);prior=prior_live or {};old={fixture_key(f):f for f in prior.get('fixtures',[])};generated=preserved=locked=retro=0
+    model=load_js_assignment(MODEL_PATH,'window.MODEL_DATA = ');live=load_js_assignment(LIVE_PATH,'window.LIVE_DATA = ');live['teamSignals']=sanitize_team_signals(live.get('teamSignals') or {});trained=load_trained();context=load_context();now=datetime.now(timezone.utc);prior=prior_live or {};old={fixture_key(f):f for f in prior.get('fixtures',[])};generated=preserved=locked=retro=0
     for f in live.get('fixtures',[]):
         prev=old.get(fixture_key(f)) or {};oldp=prev.get('prediction');ko=parse_iso(f.get('kickoff'));started=f.get('status') in ('live','final') or (ko is not None and ko<=now)
         if started and oldp:
