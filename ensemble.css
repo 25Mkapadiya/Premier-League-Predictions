@@ -1,0 +1,11 @@
+.model-breakdown{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:11px 14px;border-top:1px solid var(--border);background:rgba(255,255,255,.018)}
+.featured-card .model-breakdown{margin:18px -1px -1px;border:1px solid var(--border);border-radius:14px;background:rgba(0,0,0,.16)}
+.model-chip{display:flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);font-size:11px;white-space:nowrap}
+.model-chip i{font-style:normal;color:var(--muted)}.model-chip b{color:var(--text);font-variant-numeric:tabular-nums}.model-chip.market-on{border-color:rgba(201,255,88,.28)}.model-chip.market-on b{color:var(--lime)}.model-chip.market-off b{color:var(--muted);font-weight:600}
+.agreement-chip{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan);font-weight:800;margin-left:auto}
+.ensemble-status{display:grid;gap:10px;margin-top:12px}.ensemble-status-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:12px}.ensemble-status-row:last-child{border-bottom:0}.ensemble-status-row span{color:var(--muted)}.ensemble-status-row strong{font-size:11px;color:var(--text)}
+.method-callout{padding:22px;margin-top:14px;border:1px solid rgba(201,255,88,.2);background:linear-gradient(135deg,rgba(201,255,88,.05),rgba(112,220,255,.03));border-radius:var(--radius)}.method-callout h3{margin:4px 0 8px;font-size:20px}.method-callout p{margin:0;color:var(--muted);max-width:850px}
+.signal-policy-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}.signal-policy-grid div{padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.signal-policy-grid span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.signal-policy-grid strong{display:block;margin-top:5px;font-size:13px}
+.result-summary{grid-template-columns:repeat(4,1fr)!important}
+@media(max-width:900px){.signal-policy-grid{grid-template-columns:repeat(2,1fr)}.agreement-chip{margin-left:0}.result-summary{grid-template-columns:repeat(2,1fr)!important}}
+@media(max-width:620px){.signal-policy-grid{grid-template-columns:1fr}.model-breakdown{gap:6px}.model-chip{font-size:10px}.result-summary{grid-template-columns:1fr!important}}
