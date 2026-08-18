@@ -1,77 +1,79 @@
 # Accuracy Architecture
 
-PL Forecast v3 is designed around one rule: **a forecast is only valid if every input existed before kickoff**.
+PL Forecast v3 follows one rule: **a forecast is only valid if every input existed before kickoff**.
 
 ## Active with no paid API key
 
-The site works with the current repository alone and uses:
+The site works with the repository alone and uses:
 
 - venue-adjusted Poisson scoring
 - Elo team strength
 - Dixon-Coles low-score correction
-- recent opponent-adjusted goals/form
-- current Premier League match results
-- shots / shots on target when Football-Data has them
-- home/away rest difference and fixture congestion
-- a small FPL availability proxy capped so it cannot dominate team strength
-- historical/promoted-team priors already embedded in `data/model.js`
+- recent opponent-adjusted performance once 2026/27 matches are completed
+- FPL fixtures/results and team-strength signals
+- a deliberately small player-availability proxy for fixtures no more than eight days away
+- automatic filtering of players whose availability news shows they have already left the club
+- home/away rest difference and 14-day fixture congestion
+- Football-Data shots / shots-on-target once the current-season results CSV is published
+- Football-Data's free weekly upcoming-fixture odds when EPL rows are present
 
-The availability proxy is intentionally weak. Fantasy price and player status are not treated as a complete player-impact model.
+Long-range matches do **not** inherit today's injury list. They are re-enriched as kickoff approaches.
 
 ## Optional production enrichments
 
 ### `ODDS_API_KEY`
-
-Adds multi-bookmaker EPL 1X2 consensus from The Odds API. Each bookmaker's overround is removed before the median fair probability is calculated. The last pre-kickoff market snapshot is preserved after the event disappears from the live odds feed.
+Adds multi-bookmaker EPL 1X2 consensus from The Odds API. Every bookmaker's margin is removed before taking a median fair probability. The final pre-kickoff market snapshot is preserved after the event leaves the live odds feed.
 
 ### `SPORTMONKS_API_TOKEN`
-
-Adds team xG to recent completed fixtures. The dynamic form layer prefers real xG over final goals when xG exists, but the influence is shrunk and capped.
+Adds team xG to recent completed fixtures. The recent-performance layer prefers real xG over final goals when xG exists, while retaining shrinkage and caps.
 
 ### `API_FOOTBALL_KEY`
+Adds sourced near-kickoff injury lists and confirmed starting lineups. Raw injury counts are not converted into arbitrary penalties. The context is stored for auditing and future player-impact modeling.
 
-Adds near-kickoff injury lists and confirmed starting lineups. Raw injury counts are **not** converted into arbitrary probability penalties. The context is stored for auditing and for a future learned player-impact layer.
+## Trained market-aware ensemble
 
-## Trained ensemble
-
-`Train prediction ensemble` downloads four historical Premier League seasons from Football-Data and builds a time-ordered dataset.
+`Train prediction ensemble` builds a chronological historical dataset:
 
 - 2022/23: state warm-up only
-- 2023/24 + 2024/25: coefficient fitting
-- first half 2025/26: probability temperature calibration
-- second half 2025/26: untouched holdout
+- 2023/24 + 2024/25: coefficient fitting (760 matches)
+- first half 2025/26: temperature calibration (190 matches)
+- second half 2025/26: untouched holdout (190 matches)
 
-Features include structural probabilities, fair market probabilities, recent points/form, goal difference, shots-on-target difference and rest difference.
+The first successful v3 holdout produced:
 
-The trainer outputs `data/trained_model.json`. Production only activates the learned layer when the file is valid and contains enough training samples.
+| Model | 1X2 accuracy | Brier | Log loss |
+| --- | ---: | ---: | ---: |
+| v3 ensemble | 44.2% | **0.633** | **1.047** |
+| historical market benchmark | **45.8%** | 0.635 | 1.050 |
+| rolling structural benchmark | 43.2% | 0.662 | 1.089 |
 
-## Coherent markets
+The ensemble's raw winner hit rate did not beat the historical market on this holdout, so the project does not claim that it did. It did slightly improve the two probability-quality metrics used for calibration.
 
-A learned or market-calibrated 1X2 forecast can otherwise conflict with an old Poisson score grid. The production engine therefore realigns the home/away goal lambdas to the final 1X2 target while penalizing unnecessary changes to total expected goals.
+Every historical training row had market probabilities available. For that reason, production only uses the learned ensemble when the live fixture also has a fair market snapshot. Without market evidence the site stays on the dynamic football model rather than extrapolating the learned coefficients outside their tested regime.
 
-That keeps expected score, correct score, BTTS, totals and 1X2 tied to one final score distribution.
+`data/training_status.json` records every training run's success/failure and latest holdout.
+
+## Coherent score markets
+
+After a final 1X2 probability is chosen, the engine searches for home/away scoring lambdas that closely reproduce that target while penalizing unnecessary movement in total expected goals. Correct score, expected score, BTTS, totals and 1X2 therefore remain tied to one score distribution.
 
 ## Forecast locking
 
-`build_predictions.py` stores a prediction directly on each fixture in `data/live.js`.
+`build_predictions.py` stores a prediction directly on every fixture in `data/live.js`.
 
-Before kickoff, that prediction may change as fresh form, market or lineup evidence arrives. At kickoff it becomes immutable. Later result refreshes grade the frozen forecast instead of recalculating with future information.
-
-If the site is first run only after a match has already started, the generated forecast is marked `retroGenerated` so it is not confused with a true pre-match snapshot.
+Before kickoff the prediction may change as valid new evidence arrives. At kickoff it becomes immutable. Later result refreshes grade the frozen forecast instead of recalculating with future information. If the first snapshot is created only after kickoff, it is marked `retroGenerated` and is distinguishable from a genuine pre-match forecast.
 
 ## Metrics
 
-The Results page reports 1X2 hit rate, Brier score, log loss, rounded score hits and the number of genuinely frozen forecasts.
+The Results page reports 1X2 hit rate, Brier score, log loss, rounded score hits and the number of frozen forecasts. Brier score and log loss are the primary probability-quality measures.
 
-Brier score and log loss matter more than raw hit rate when judging probability quality.
-
-## What is deliberately not over-weighted
+## Deliberately low-weight or excluded
 
 - head-to-head history
-- raw possession percentage
-- tiny winning/losing streaks
-- injury counts without player-impact estimates
+- raw possession percentage by itself
+- tiny W/D/L streaks
+- raw injury counts without player impact
 - social-media sentiment
 - arbitrary AI confidence labels
 
-A feature should enter the production model only after it improves unseen-match probability quality.
+A new feature should enter the production model only after it improves unseen-match probability quality.
