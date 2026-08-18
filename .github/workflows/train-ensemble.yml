@@ -1,0 +1,41 @@
+name: Train prediction ensemble
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "35 5 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: premier-league-training
+  cancel-in-progress: true
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate trainer
+        run: |
+          python -m py_compile scripts/prediction_core.py
+          python -m py_compile scripts/train_ensemble.py
+      - name: Train with time-ordered holdout
+        run: python scripts/train_ensemble.py
+      - name: Commit model only when training succeeded
+        run: |
+          if git diff --quiet -- data/trained_model.json; then
+            echo "Model unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/trained_model.json
+          git commit -m "Retrain Premier League ensemble"
+          git push
