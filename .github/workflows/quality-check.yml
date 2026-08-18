@@ -22,9 +22,12 @@ jobs:
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/refresh_results.py
           python -m py_compile scripts/external_enrichment.py
+          python -m py_compile scripts/fixture_market.py
+          python -m py_compile scripts/availability_sanitizer.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
           python -m py_compile scripts/train_ensemble.py
+          python -m py_compile scripts/train_ensemble_fast.py
       - name: Check JSON configuration
         run: |
           python - <<'PY'
