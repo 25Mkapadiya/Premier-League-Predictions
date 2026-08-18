@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - scripts/train_ensemble.py
+      - scripts/train_ensemble_fast.py
       - scripts/prediction_core.py
       - .github/workflows/train-ensemble.yml
 
@@ -32,8 +33,9 @@ jobs:
         run: |
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/train_ensemble.py
+          python -m py_compile scripts/train_ensemble_fast.py
       - name: Train with time-ordered holdout
-        run: python scripts/train_ensemble.py
+        run: python scripts/train_ensemble_fast.py
       - name: Commit model only when training succeeded
         run: |
           if git diff --quiet -- data/trained_model.json; then
