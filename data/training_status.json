@@ -1,7 +1,7 @@
 {
-  "updated": "2026-08-18T17:06:46.623575Z",
-  "success": false,
-  "exitCode": 1,
+  "updated": "2026-08-18T17:22:52.568057Z",
+  "success": true,
+  "exitCode": 0,
   "modelEnabled": true,
   "holdout": {
     "ensemble": {
@@ -24,5 +24,5 @@
     }
   },
   "trainingSamples": 760,
-  "logTail": "Traceback (most recent call last):\n  File \"/home/runner/work/Premier-League-Predictions/Premier-League-Predictions/scripts/train_ensemble_fast.py\", line 6, in <module>\n    import train_ensemble as t\n  File \"/home/runner/work/Premier-League-Predictions/Premier-League-Predictions/scripts/train_ensemble.py\", line 8, in <module>\n    from prediction_core import ROOT,brier,clamp,log_loss,score_grid,softmax\nImportError: cannot import name 'brier' from 'prediction_core' (/home/runner/work/Premier-League-Predictions/Premier-League-Predictions/scripts/prediction_core.py)\n"
+  "logTail": "{\n  \"ensemble\": {\n    \"matches\": 190,\n    \"accuracy\": 0.4421052631578947,\n    \"brier\": 0.6332054245757324,\n    \"logLoss\": 1.0473047372793511\n  },\n  \"structural\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6615942960279846,\n    \"logLoss\": 1.0892507701472471\n  },\n  \"market\": {\n    \"matches\": 190,\n    \"accuracy\": 0.45789473684210524,\n    \"brier\": 0.6347439643495971,\n    \"logLoss\": 1.0501414020994284\n  }\n}\n"
 }

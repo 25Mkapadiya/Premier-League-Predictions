@@ -2,7 +2,7 @@
   "enabled": true,
   "version": "3.0",
   "trainer": "fast-softmax-v1",
-  "trainedAt": "2026-08-18T16:32:31.322967Z",
+  "trainedAt": "2026-08-18T17:22:52.527948Z",
   "trainingSeasons": [
     "2023/24",
     "2024/25"
