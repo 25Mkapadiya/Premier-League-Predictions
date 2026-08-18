@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared no-API Premier League prediction utilities.
+"""Shared no-key Premier League prediction utilities.
 
 The production rule is strict: every feature must have existed before fixture kickoff.
 """
@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def clamp(x, lo, hi): return max(lo, min(hi, x))
+def brier(p, outcome):
+    y={'H':(1,0,0),'D':(0,1,0),'A':(0,0,1)}[outcome]
+    return sum((v-t)**2 for v,t in zip((p['home'],p['draw'],p['away']),y))
+def log_loss(p, outcome):
+    key={'H':'home','D':'draw','A':'away'}[outcome]
+    return -math.log(clamp(float(p[key]),1e-12,1.0))
 
 def parse_iso(v):
     if not v: return None
