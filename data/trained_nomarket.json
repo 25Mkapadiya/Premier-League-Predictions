@@ -1,0 +1,92 @@
+{
+  "enabled": true,
+  "version": "4.0-nomarket",
+  "trainer": "no-market-softmax-v1",
+  "trainedAt": "2026-08-18T17:25:25.290405Z",
+  "trainingSeasons": [
+    "2023/24",
+    "2024/25"
+  ],
+  "calibrationWindow": "first half 2025/26",
+  "holdoutWindow": "second half 2025/26",
+  "trainingSamples": 760,
+  "calibrationSamples": 190,
+  "features": [
+    "base_home",
+    "base_draw",
+    "base_away",
+    "form_ppm_diff",
+    "gdpg_diff",
+    "sotdiff_diff",
+    "rest_diff"
+  ],
+  "means": {
+    "base_home": 0.46552329241212775,
+    "base_draw": 0.229909646383665,
+    "base_away": 0.3045670612042073,
+    "form_ppm_diff": -0.0366441160385508,
+    "gdpg_diff": -0.040166831362360336,
+    "sotdiff_diff": -0.1527392731573205,
+    "rest_diff": 0.06447368421052632
+  },
+  "scales": {
+    "base_home": 0.19343374852807266,
+    "base_draw": 0.04873601842645802,
+    "base_away": 0.17169730364904465,
+    "form_ppm_diff": 0.9573289821336679,
+    "gdpg_diff": 1.450824317938428,
+    "sotdiff_diff": 3.297948916813579,
+    "rest_diff": 1.776675400911062
+  },
+  "coefficients": [
+    [
+      0.15809414315503026,
+      -0.06229257767410001,
+      -0.16042680887847477,
+      0.035437113366722214,
+      -0.07373826731286516,
+      0.3173835182021987,
+      -0.033448636510949335
+    ],
+    [
+      -0.011777187317383416,
+      0.049113522632877424,
+      -0.0006726492009536566,
+      -0.0041709912969635715,
+      0.15901183109519623,
+      -0.0851850728851842,
+      0.024822525817311078
+    ],
+    [
+      -0.1463169558376467,
+      0.013179055041222635,
+      0.1610994580794285,
+      -0.03126612206975873,
+      -0.08527356378233125,
+      -0.23219844531701453,
+      0.008626110693638294
+    ]
+  ],
+  "intercepts": [
+    0.2856695902490349,
+    -0.24939744858385904,
+    -0.03627214166517526
+  ],
+  "temperature": 0.9,
+  "holdout": {
+    "ensemble": {
+      "matches": 190,
+      "accuracy": 0.4368421052631579,
+      "brier": 0.6499602615967127,
+      "logLoss": 1.070666265268521
+    },
+    "structural": {
+      "matches": 190,
+      "accuracy": 0.43157894736842106,
+      "brier": 0.6615942960279846,
+      "logLoss": 1.0892507701472471
+    }
+  },
+  "promotionRule": "Enabled only when both Brier score and log loss beat the structural model on the untouched holdout.",
+  "notes": "No bookmaker, injury, lineup, API-key, or future-match information is used."
+}
