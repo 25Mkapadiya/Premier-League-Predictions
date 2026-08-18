@@ -12,21 +12,25 @@ def load_trained():
     except json.JSONDecodeError:return {'enabled':False}
 def fixture_key(f):return f"{f.get('home')}__{f.get('away')}__{f.get('matchweek')}"
 def main(prior_live=None):
-    model=load_js_assignment(MODEL_PATH,'window.MODEL_DATA = ');live=load_js_assignment(LIVE_PATH,'window.LIVE_DATA = ');live['teamSignals']=sanitize_team_signals(live.get('teamSignals') or {});trained=load_trained();context=load_context();now=datetime.now(timezone.utc);prior=prior_live or {};old={fixture_key(f):f for f in prior.get('fixtures',[])};generated=preserved=locked=retro=0
+    model=load_js_assignment(MODEL_PATH,'window.MODEL_DATA = ');live=load_js_assignment(LIVE_PATH,'window.LIVE_DATA = ');live['teamSignals']=sanitize_team_signals(live.get('teamSignals') or {});trained=load_trained();context=load_context();now=datetime.now(timezone.utc);prior=prior_live or {};old={fixture_key(f):f for f in prior.get('fixtures',[])};generated=preserved=locked=retro=0;trained_used=0
     for f in live.get('fixtures',[]):
         prev=old.get(fixture_key(f)) or {};oldp=prev.get('prediction');ko=parse_iso(f.get('kickoff'));started=f.get('status') in ('live','final') or (ko is not None and ko<=now)
         if started and oldp:
             f['prediction']=oldp;f['predictionLocked']=True;f['predictionLockedAt']=prev.get('predictionLockedAt') or f.get('kickoff');preserved+=1;locked+=1;continue
-        # Current player availability is valuable near kickoff, but applying today's
-        # injury list to a fixture months away creates false certainty. Long-range
-        # fixtures use neutral availability and are re-enriched as kickoff approaches.
+        # Today's player availability is only valid near kickoff. Long-range matches
+        # stay on neutral availability and are re-enriched as their date approaches.
         near_term=ko is not None and -1 <= (ko-now).total_seconds()/86400 <= 8
         source_live=live if near_term else {**live,'teamSignals':{}}
-        p=predict_fixture(model,source_live,f,trained=trained,context=context)
-        p['availabilityWindow']='active' if near_term else 'deferred'
+        # The fitted v3 ensemble was trained/validated on historical rows with market
+        # probabilities present. Do not extrapolate those coefficients into a no-market
+        # regime; use the dynamic football model until fair odds exist for this fixture.
+        fixture_trained=trained if f.get('odds') and trained.get('enabled') else {'enabled':False}
+        p=predict_fixture(model,source_live,f,trained=fixture_trained,context=context)
+        if p.get('engine')=='trained ensemble':trained_used+=1
+        p['availabilityWindow']='active' if near_term else 'deferred';p['trainedEligibility']='eligible' if f.get('odds') else 'waiting for market snapshot'
         if started:p['retroGenerated']=True;retro+=1;f['predictionLocked']=True;f['predictionLockedAt']=f.get('kickoff');locked+=1
         else:f['predictionLocked']=False
         f['prediction']=p;generated+=1
-    live.setdefault('meta',{})['predictionEngine']={'version':'3.0','generatedAt':now.isoformat().replace('+00:00','Z'),'trainedModelEnabled':bool(trained.get('enabled')),'trainedModelHoldout':trained.get('holdout'),'generated':generated,'preservedLocked':preserved,'locked':locked,'retroGenerated':retro,'availabilityHorizonDays':8,'policy':'Forecasts freeze at kickoff. Finished matches are never recalculated with future information.'}
-    write_js_assignment(LIVE_PATH,'window.LIVE_DATA = ',live);print(f'Predictions: generated={generated}, preserved={preserved}, locked={locked}, retro={retro}, trained={bool(trained.get("enabled"))}');return 0
+    live.setdefault('meta',{})['predictionEngine']={'version':'3.0','generatedAt':now.isoformat().replace('+00:00','Z'),'trainedModelEnabled':bool(trained.get('enabled')),'trainedModelHoldout':trained.get('holdout'),'trainedFixtures':trained_used,'generated':generated,'preservedLocked':preserved,'locked':locked,'retroGenerated':retro,'availabilityHorizonDays':8,'trainedModelPolicy':'The learned ensemble is used only when a fair market snapshot is available, matching its validated training regime.','policy':'Forecasts freeze at kickoff. Finished matches are never recalculated with future information.'}
+    write_js_assignment(LIVE_PATH,'window.LIVE_DATA = ',live);print(f'Predictions: generated={generated}, preserved={preserved}, locked={locked}, retro={retro}, trainedFixtures={trained_used}');return 0
 if __name__=='__main__':raise SystemExit(main())
