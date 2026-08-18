@@ -17,6 +17,7 @@ jobs:
         run: |
           node --check app.js
           node --check app-v3.js
+          node --check noapi-preload.js
           node --check noapi-ui.js
       - name: Check no-key forecasting Python
         run: |
@@ -28,6 +29,7 @@ jobs:
           python -m py_compile scripts/run_refresh.py
           python -m py_compile scripts/train_ensemble.py
           python -m py_compile scripts/train_ensemble_fast.py
+          python -m py_compile scripts/train_nomarket.py
       - name: Check JSON configuration
         run: |
           python - <<'PY'
@@ -35,18 +37,21 @@ jobs:
           for path in ['data/context.json','data/trained_model.json','data/training_status.json']:
               json.load(open(path))
               print(path, 'OK')
+          p='data/trained_nomarket.json'
+          try:
+              json.load(open(p));print(p,'OK')
+          except FileNotFoundError:
+              print(p,'not created yet; trainer will create it')
           PY
       - name: Check required page hooks
         run: |
           python - <<'PY'
           from pathlib import Path
           from html.parser import HTMLParser
-          html = Path('index.html').read_text()
-          HTMLParser().feed(html)
+          html=Path('index.html').read_text();HTMLParser().feed(html)
           for element_id in ['fixture-feed','featured-match','league-table','home-select','away-select','refresh-data','results-feed']:
-              assert f'id="{element_id}"' in html, element_id
-          assert 'app-v3.js' in html
-          assert 'noapi-ui.js' in html
-          assert 'accuracy.css' in html
+              assert f'id="{element_id}"' in html,element_id
+          for asset in ['app-v3.js','noapi-preload.js','noapi-ui.js','accuracy.css']:
+              assert asset in html,asset
           print('HTML hooks OK')
           PY
