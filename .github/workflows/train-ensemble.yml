@@ -34,16 +34,40 @@ jobs:
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/train_ensemble.py
           python -m py_compile scripts/train_ensemble_fast.py
-      - name: Train with time-ordered holdout
-        run: python scripts/train_ensemble_fast.py
-      - name: Commit model only when training succeeded
+      - name: Train, record status, and publish result
         run: |
-          if git diff --quiet -- data/trained_model.json; then
-            echo "Model unchanged."
-            exit 0
-          fi
+          set +e
+          python scripts/train_ensemble_fast.py > /tmp/training.log 2>&1
+          TRAIN_EXIT=$?
+          set -e
+          cat /tmp/training.log
+          TRAIN_EXIT="$TRAIN_EXIT" python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          log = Path('/tmp/training.log').read_text(errors='replace')
+          code = int(os.environ['TRAIN_EXIT'])
+          model_path = Path('data/trained_model.json')
+          model = {}
+          if model_path.exists():
+              try: model = json.loads(model_path.read_text())
+              except Exception: pass
+          status = {
+              'updated': datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
+              'success': code == 0,
+              'exitCode': code,
+              'modelEnabled': bool(model.get('enabled')),
+              'holdout': model.get('holdout'),
+              'trainingSamples': model.get('trainingSamples', 0),
+              'logTail': log[-3500:],
+          }
+          Path('data/training_status.json').write_text(json.dumps(status, indent=2))
+          PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/trained_model.json
-          git commit -m "Retrain Premier League ensemble"
-          git push
+          git add data/trained_model.json data/training_status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record Premier League ensemble training"
+            git push
+          fi
+          exit "$TRAIN_EXIT"
