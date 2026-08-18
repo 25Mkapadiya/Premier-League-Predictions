@@ -1,0 +1,13 @@
+{
+  "enabled": false,
+  "version": "3.0",
+  "message": "Run the Train prediction ensemble GitHub Action to fit time-ordered weights from historical Premier League data. Until then the production engine uses the dynamic score model plus market consensus when available.",
+  "features": [],
+  "means": {},
+  "scales": {},
+  "coefficients": [],
+  "intercepts": [],
+  "temperature": 1.0,
+  "trainingSamples": 0,
+  "holdout": null
+}
