@@ -1,0 +1,30 @@
+name: Validate prediction dashboard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check JavaScript syntax
+        run: node --check app.js
+      - name: Check refresh script syntax
+        run: python -m py_compile scripts/refresh_results.py
+      - name: Check required page hooks
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from html.parser import HTMLParser
+          html = Path('index.html').read_text()
+          HTMLParser().feed(html)
+          for element_id in ['fixture-feed','featured-match','league-table','home-select','away-select','refresh-data','results-feed']:
+              assert f'id="{element_id}"' in html, element_id
+          print('HTML hooks OK')
+          PY
