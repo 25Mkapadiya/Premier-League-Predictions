@@ -3,7 +3,7 @@
 from __future__ import annotations
 import copy
 from datetime import datetime,timezone
-import build_predictions,external_enrichment,refresh_results
+import build_predictions,external_enrichment,fixture_market,refresh_results
 from prediction_core import ROOT,load_js_assignment,write_js_assignment
 LIVE=ROOT/'data'/'live.js'
 def read_live():
@@ -14,7 +14,7 @@ def fixture_key(f):return f"{f.get('home')}__{f.get('away')}__{f.get('matchweek'
 def main():
     before=read_live();old={fixture_key(f):f for f in before.get('fixtures',[])};code=refresh_results.main()
     if code:return code
-    after=read_live();after.setdefault('meta',{})['enrichment']=external_enrichment.enrich(after.get('fixtures',[]));po=pc=0
+    after=read_live();after.setdefault('meta',{})['enrichment']=external_enrichment.enrich(after.get('fixtures',[]));after['meta']['freeMarket']=fixture_market.attach(after.get('fixtures',[]));po=pc=0
     for f in after.get('fixtures',[]):
         prev=old.get(fixture_key(f)) or {}
         if not f.get('odds') and prev.get('odds'):f['odds']=copy.deepcopy(prev['odds']);f['odds']['preserved']=True;po+=1
