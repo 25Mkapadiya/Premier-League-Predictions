@@ -8,6 +8,7 @@ on:
   push:
     branches: [main]
     paths:
+      - data/trained_model.json
       - scripts/prediction_core.py
       - scripts/refresh_results.py
       - scripts/external_enrichment.py
