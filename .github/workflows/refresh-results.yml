@@ -3,7 +3,7 @@ name: Refresh Premier League prediction data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "17 * * * *"
   push:
     branches: [main]
     paths:
