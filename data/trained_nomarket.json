@@ -2,7 +2,7 @@
   "enabled": true,
   "version": "4.0-nomarket",
   "trainer": "no-market-softmax-v1",
-  "trainedAt": "2026-08-18T17:25:25.290405Z",
+  "trainedAt": "2026-08-18T17:29:10.761541Z",
   "trainingSeasons": [
     "2023/24",
     "2024/25"
