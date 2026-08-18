@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
@@ -45,8 +46,18 @@ def request_bytes(url, timeout=30, ajax=False):
         headers['Referer']='https://understat.com/'
         headers['X-Requested-With']='XMLHttpRequest'
     req=urllib.request.Request(url,headers=headers)
-    with urllib.request.urlopen(req,timeout=timeout) as response:
-        return response.read()
+    try:
+        with urllib.request.urlopen(req,timeout=timeout) as response:
+            return response.read()
+    except urllib.error.HTTPError as exc:
+        # Surface the response body (not just the status line) so a stale/ambiguous
+        # URL is diagnosable from the recorded message instead of a bare status code.
+        detail=''
+        try:detail=exc.read(300).decode('utf-8',errors='replace').strip()
+        except Exception:pass
+        message=f'HTTP {exc.code} {exc.reason}'
+        if detail:message+=f' :: {detail[:200]}'
+        raise RuntimeError(message) from exc
 
 
 def fetch_text(url, timeout=30):
