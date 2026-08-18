@@ -1,35 +1,40 @@
-name: Refresh Premier League results
+name: Refresh Premier League prediction data
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "20 6 * * *"
+    - cron: "7 * * * *"
 
 permissions:
   contents: write
+
+concurrency:
+  group: premier-league-refresh
+  cancel-in-progress: true
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     env:
       ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+      SPORTMONKS_API_TOKEN: ${{ secrets.SPORTMONKS_API_TOKEN }}
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Validate refresh scripts
+      - name: Validate forecasting scripts
         run: |
+          python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/refresh_results.py
+          python -m py_compile scripts/external_enrichment.py
+          python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
-
-      - name: Refresh fixtures, results and optional market consensus
+      - name: Refresh and build prediction snapshot
         run: python scripts/refresh_snapshot.py
-
       - name: Commit refreshed snapshot
         run: |
           if git diff --quiet -- data/live.js; then
