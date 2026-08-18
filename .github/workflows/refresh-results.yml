@@ -22,11 +22,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate refresh script
-        run: python -m py_compile scripts/refresh_results.py
+      - name: Validate refresh scripts
+        run: |
+          python -m py_compile scripts/refresh_results.py
+          python -m py_compile scripts/refresh_snapshot.py
 
       - name: Refresh fixtures, results and optional market consensus
-        run: python scripts/refresh_results.py
+        run: python scripts/refresh_snapshot.py
 
       - name: Commit refreshed snapshot
         run: |
