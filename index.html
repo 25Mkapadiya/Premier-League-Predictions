@@ -118,12 +118,12 @@
       <div class="insight-card model-signal-card"><div class="insight-top"><span>Power leader</span><span class="signal-icon">↗</span></div><div class="signal-team" id="signal-team"></div><div class="signal-power"><strong id="signal-power">—</strong><span>/ 100</span></div><div class="signal-bars"><div><span>Attack</span><b><i id="signal-attack"></i></b></div><div><span>Defense</span><b><i id="signal-defense"></i></b></div></div></div>
       <div class="insight-card"><div class="insight-top"><span>Next kickoff</span><span>⌚</span></div><div id="next-kickoff" class="next-kickoff"></div></div>
       <div class="insight-card"><div class="insight-top"><span>Quick table</span><button class="text-button" data-view-target="table">Full table</button></div><div class="quick-table" id="quick-table"></div></div>
-      <div class="insight-card refresh-card"><span class="mini-kicker">Data freshness</span><strong id="last-sync">Not synced yet</strong><p>GitHub Actions checks the public no-key sources every two hours and can also be run manually. The button below reloads the newest committed snapshot.</p><button class="full-button" id="refresh-data-secondary">Reload latest snapshot</button></div>
+      <div class="insight-card refresh-card"><span class="mini-kicker">Data freshness</span><strong id="last-sync">Not synced yet</strong><p>GitHub Actions checks the public no-key sources automatically and can also be run manually. The button below reloads the newest committed snapshot.</p><button class="full-button" id="refresh-data-secondary">Reload latest snapshot</button></div>
     </aside>
   </div>
 
   <footer class="site-footer"><div><strong>PL Forecast</strong><span>Independent forecasting project. Predictions are estimates, not betting advice.</span></div><div><span>2026/27</span><span>Forecasts freeze at kickoff.</span></div></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="app-v3.js"></script><script src="noapi-ui.js"></script>
+  <script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="noapi-preload.js"></script><script src="app-v3.js"></script><script src="noapi-ui.js"></script>
 </body>
 </html>
