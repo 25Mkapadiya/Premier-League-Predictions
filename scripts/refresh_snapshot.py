@@ -1,48 +1,24 @@
 #!/usr/bin/env python3
-"""Run the normal refresh while preserving the last available pre-match odds snapshot.
-
-The Odds API normally stops returning completed events. Without this wrapper, a finished
-fixture would lose the market component that was available before kickoff, making later
-prediction review inconsistent with the pre-match forecast.
-"""
+"""Refresh live data, enrich it, preserve pre-match evidence, then build predictions."""
 from __future__ import annotations
-import json
-from pathlib import Path
-import refresh_results
-
-ROOT=Path(__file__).resolve().parents[1]
+import copy
+from datetime import datetime,timezone
+import build_predictions,external_enrichment,refresh_results
+from prediction_core import ROOT,load_js_assignment,write_js_assignment
 LIVE=ROOT/'data'/'live.js'
-PREFIX='window.LIVE_DATA = '
-
 def read_live():
     if not LIVE.exists():return {}
-    text=LIVE.read_text(encoding='utf-8').strip()
-    if not text.startswith(PREFIX):return {}
-    body=text[len(PREFIX):]
-    if body.endswith(';'):body=body[:-1]
-    try:return json.loads(body)
-    except json.JSONDecodeError:return {}
-
+    try:return load_js_assignment(LIVE,'window.LIVE_DATA = ')
+    except Exception:return {}
 def fixture_key(f):return f"{f.get('home')}__{f.get('away')}__{f.get('matchweek')}"
-
 def main():
-    before=read_live()
-    prior_odds={fixture_key(f):f.get('odds') for f in before.get('fixtures',[]) if f.get('odds')}
-    code=refresh_results.main()
+    before=read_live();old={fixture_key(f):f for f in before.get('fixtures',[])};code=refresh_results.main()
     if code:return code
-    after=read_live()
-    preserved=0
-    for fixture in after.get('fixtures',[]):
-        if fixture.get('odds'):continue
-        old=prior_odds.get(fixture_key(fixture))
-        if old:
-            fixture['odds']=old
-            fixture['odds']['preserved']=True
-            preserved+=1
-    if preserved:
-        after.setdefault('meta',{}).setdefault('market',{})['preservedFixtures']=preserved
-        LIVE.write_text(PREFIX+json.dumps(after,separators=(',',':'),ensure_ascii=False)+';\n',encoding='utf-8')
-    print(f'Preserved prior market snapshots for {preserved} fixtures.')
-    return 0
-
+    after=read_live();after.setdefault('meta',{})['enrichment']=external_enrichment.enrich(after.get('fixtures',[]));po=pc=0
+    for f in after.get('fixtures',[]):
+        prev=old.get(fixture_key(f)) or {}
+        if not f.get('odds') and prev.get('odds'):f['odds']=copy.deepcopy(prev['odds']);f['odds']['preserved']=True;po+=1
+        if not f.get('apiContext') and prev.get('apiContext'):f['apiContext']=copy.deepcopy(prev['apiContext']);f['apiContext']['preserved']=True;pc+=1
+        if not f.get('xg') and prev.get('xg'):f['xg']=copy.deepcopy(prev['xg'])
+    after['meta']['preservation']={'oddsFixtures':po,'contextFixtures':pc,'updated':datetime.now(timezone.utc).isoformat().replace('+00:00','Z')};write_js_assignment(LIVE,'window.LIVE_DATA = ',after);return build_predictions.main(prior_live=before)
 if __name__=='__main__':raise SystemExit(main())
