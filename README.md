@@ -1,40 +1,98 @@
 # PL Forecast — Premier League Predictions
 
-A dark, sports-first **2026/27 Premier League prediction dashboard** inspired by the information density of modern score sites while keeping its own visual identity. It combines score forecasts, 1X2 probabilities, prediction markets, result review, standings, a matchup simulator and transparent model documentation.
+A dark, sports-first **2026/27 Premier League prediction dashboard** with a transparent ensemble model, daily result refreshes and prediction-vs-result auditing.
 
-## What is in the app
+## Prediction framework
 
-- Scores-site style three-column desktop structure: competition navigation, match feed and insights rail
-- Dark interface designed specifically around football predictions
-- Featured prediction plus compact match rows
-- Upcoming / Live / Final match states
-- 1X2 probabilities for every matchup
-- Over/Under 2.5, BTTS and correct-score probability signals
-- Prediction-vs-result review after finished games
-- League table calculated from the latest finished fixtures
-- Quick standings rail and next-kickoff module
-- Team search / filter
-- Matchup Lab for any two 2026/27 Premier League clubs
-- Responsive mobile navigation
-- Versioned results snapshot with a visible last-sync time
-- Automatic expansion to all 38 matchweeks when the live fixture snapshot is available
+The app now combines:
 
-## Daily / on-demand result refresh
+1. **Structural score model** — venue-adjusted Poisson + Elo + Dixon-Coles
+2. **Opponent-adjusted recent form** — exponentially weighted residual performance from matches completed before kickoff
+3. **Optional bookmaker consensus** — vig-free 1X2 probabilities blended conservatively with the football model
+4. **Optional pre-match context** — bounded, sourced lineup/injury/suspension adjustments
 
-The public site is static GitHub Pages, so it does **not** depend on a fragile browser-side sports API call.
+Every match card can show the contribution/status of Base, Form, Market and data quality. Missing inputs fall back safely instead of being guessed.
 
-Instead, `.github/workflows/refresh-results.yml` runs `scripts/refresh_results.py` and commits a fresh `data/live.js` snapshot.
+See [`docs/ENSEMBLE.md`](docs/ENSEMBLE.md) for the full framework and accuracy roadmap.
 
-The workflow supports both:
+## App features
 
-- **Daily automatic refresh** at 06:20 UTC
-- **Manual refresh** through GitHub Actions → `Refresh Premier League results` → `Run workflow`
+- Full 38-matchweek schedule when available from the refresh feed
+- Home / draw / away probabilities
+- Rounded expected-score forecast and most likely exact score
+- Over/Under 2.5 and BTTS probabilities
+- Model-component breakdown and signal agreement
+- Results page retaining the original prediction beside the final score
+- Running 1X2 hit rate and Brier score after games finish
+- League table and last-five form
+- Matchup Lab for any two Premier League clubs
+- Responsive dark sports-dashboard interface
+- Daily + manual GitHub Actions refresh
 
-The refresh script tries the Fantasy Premier League fixture endpoint first and falls back to the current-season Football-Data.co.uk Premier League CSV if needed. The page-level refresh button cache-busts and reloads the newest committed `data/live.js` file.
+## Daily result + market refresh
 
-### Why this architecture
+`.github/workflows/refresh-results.yml` runs `scripts/refresh_results.py` and commits a fresh `data/live.js` snapshot.
 
-GitHub Pages cannot securely store API secrets, and some football endpoints do not allow normal browser cross-origin requests. A committed snapshot gives the site reliable, auditable data with no client credentials.
+The workflow supports:
+
+- automatic daily refresh at 06:20 UTC
+- manual refresh from GitHub Actions
+- FPL fixture/result feed as the primary schedule/result source
+- Football-Data.co.uk result fallback
+- optional The Odds API EPL 1X2 consensus
+
+### Enable bookmaker consensus
+
+The project works without a bookmaker API key. To enable the market layer:
+
+1. Create an API key with **The Odds API**.
+2. In the GitHub repository open **Settings → Secrets and variables → Actions**.
+3. Create a repository secret named exactly `ODDS_API_KEY`.
+4. Run **Actions → Refresh Premier League results → Run workflow**.
+5. Open the site and verify the right rail says that market consensus is connected.
+
+The secret is only used inside GitHub Actions. It is never placed in browser JavaScript or committed to the repository.
+
+## Pre-match context
+
+`data/context.js` is deliberately empty by default. Add a fixture adjustment only when the information is sourced before kickoff.
+
+Example shape:
+
+```js
+"Arsenal__Coventry": {
+  "homeAttackMultiplier": 0.98,
+  "homeDefenseMultiplier": 1.00,
+  "awayAttackMultiplier": 1.00,
+  "awayDefenseMultiplier": 1.00,
+  "note": "Confirmed starting striker unavailable",
+  "updated": "2026-08-21T17:30:00Z"
+}
+```
+
+Keep normal adjustments close to 1.00. The code contains wider hard safety limits, but those are not target values.
+
+## Data / leakage policy
+
+For a fixture at time `T`:
+
+- recent form only uses matches completed before `T`
+- market data must be a snapshot available before `T`
+- lineup/injury context must have been known before `T`
+- historical predictions should never be rewritten using information learned after the match
+
+This policy is more important than adding a more complicated algorithm.
+
+## Current benchmark
+
+The earlier structural model's rolling 2025/26 check produced:
+
+- 48.7% top 1X2 outcome accuracy
+- 42.6% always-home baseline
+- 0.628 multiclass Brier score
+- 1.042 log loss
+
+These numbers remain the benchmark. **Do not claim the new ensemble is more accurate until it has been walk-forward backtested on the same historical fixtures.**
 
 ## Run locally
 
@@ -42,42 +100,19 @@ GitHub Pages cannot securely store API secrets, and some football endpoints do n
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000`.
+Open `http://localhost:8000`.
 
-## Prediction model
+To refresh data locally:
 
-The model combines:
+```bash
+python scripts/refresh_results.py
+```
 
-1. Venue-adjusted attack and defense scoring rates
-2. Shrinkage toward league averages
-3. Elo team-strength adjustment with home advantage
-4. Poisson score probabilities
-5. Dixon-Coles low-score correction
-6. A promoted-team translation for Coventry, Ipswich and Hull
+To include market consensus locally:
 
-The current preseason model uses Premier League results from **2023/24, 2024/25 and 2025/26**, plus **2025/26 Championship** performance for promoted-team translation.
-
-See [`docs/MODEL.md`](docs/MODEL.md) for methodology and validation.
-
-## Validation
-
-The rolling pre-match 2025/26 backtest produced:
-
-- **48.7%** top 1X2 outcome accuracy
-- **42.6%** always-home baseline
-- **0.628** multiclass Brier score
-- **1.042** log loss
-
-No future match outcomes were included in earlier predictions during the rolling backtest.
-
-## Data sources
-
-- Official 2026/27 schedule: PremierLeague.com fixture release
-- Historical match results: Football-Data.co.uk
-- Refresh feed: Fantasy Premier League fixtures endpoint on `fantasy.premierleague.com`
-- Method reference: Dixon-Coles / Poisson football score modeling research
-
-Fixtures and kick-off times can change. This is an independent fan project and is not affiliated with or endorsed by the Premier League or its clubs. Predictions are estimates, not betting advice.
+```bash
+ODDS_API_KEY="your-key" python scripts/refresh_results.py
+```
 
 ## Project structure
 
@@ -85,24 +120,23 @@ Fixtures and kick-off times can change. This is an independent fan project and i
 .
 ├── index.html
 ├── styles.css
+├── ensemble.css
 ├── app.js
 ├── data/
 │   ├── fixtures.js
 │   ├── model.js
-│   └── live.js
+│   ├── live.js
+│   └── context.js
 ├── scripts/
 │   └── refresh_results.py
 ├── .github/
 │   └── workflows/
 │       └── refresh-results.yml
 └── docs/
-    └── MODEL.md
+    ├── MODEL.md
+    └── ENSEMBLE.md
 ```
 
-## Refresh locally
+## Important
 
-```bash
-python scripts/refresh_results.py
-```
-
-That command rewrites `data/live.js` with the latest available fixture/result snapshot.
+The listed prediction websites were used as **research references for publicly visible signals and product patterns**, not copied as proprietary models. This project remains independent and its probabilities are estimates, not betting advice.
