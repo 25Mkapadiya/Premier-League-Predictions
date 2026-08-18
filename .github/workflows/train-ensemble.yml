@@ -10,7 +10,9 @@ on:
       - scripts/train_ensemble.py
       - scripts/train_ensemble_fast.py
       - scripts/train_nomarket.py
+      - scripts/model_fit.py
       - scripts/prediction_core.py
+      - scripts/requirements-train.txt
       - .github/workflows/train-ensemble.yml
 
 permissions:
@@ -28,9 +30,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install training dependencies
+        run: pip install -r scripts/requirements-train.txt
       - name: Validate trainers
         run: |
           python -m py_compile scripts/prediction_core.py
+          python -m py_compile scripts/model_fit.py
           python -m py_compile scripts/train_ensemble.py
           python -m py_compile scripts/train_ensemble_fast.py
           python -m py_compile scripts/train_nomarket.py

@@ -1,0 +1,6 @@
+# Pinned dependencies for the model-fitting scripts (train_ensemble.py,
+# train_nomarket.py, model_fit.py). Not required to run or serve the site --
+# only the weekly/on-demand training workflow needs these installed.
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.9.0

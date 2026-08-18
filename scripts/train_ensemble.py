@@ -5,7 +5,8 @@ import csv,io,json,math,urllib.request
 from collections import defaultdict,deque
 from dataclasses import dataclass,field
 from datetime import datetime,timezone
-from prediction_core import ROOT,brier,clamp,log_loss,score_grid,softmax
+from prediction_core import ROOT,brier,clamp,log_loss,score_grid
+from model_fit import fit_softmax_model,fit_temperature,softmax_probabilities
 OUTPUT=ROOT/'data'/'trained_model.json';SEASONS=[('2223','2022/23'),('2324','2023/24'),('2425','2024/25'),('2526','2025/26')];FEATURES=['base_home','base_draw','base_away','market_home','market_draw','market_away','market_available','form_ppm_diff','gdpg_diff','sotdiff_diff','rest_diff','availability_diff']
 def download(url):
     req=urllib.request.Request(url,headers={'User-Agent':'PL-Forecast-Trainer/3.0'})
@@ -72,42 +73,19 @@ def build_dataset(rows):
         if row['_season']!='2022/23':data.append({'season':row['_season'],'date':row['_date'],'x':feat,'y':label(row),'base':{k:base[k] for k in ('home','draw','away')}})
         state.update(row)
     return data
-def standardize(train):
-    means={};scales={}
-    for n in FEATURES:
-        vals=[r['x'][n] for r in train];m=sum(vals)/len(vals);v=sum((x-m)**2 for x in vals)/max(len(vals)-1,1);means[n]=m;scales[n]=max(math.sqrt(v),1e-6)
-    return means,scales
-def zrow(r,m,s):return [(r['x'][n]-m[n])/s[n] for n in FEATURES]
-def fit(train,means,scales,epochs=2200,lr=.075,l2=.025):
-    d=len(FEATURES);W=[[0.]*d for _ in range(3)];b=[0.]*3;zs=[zrow(r,means,scales) for r in train];ys=[r['y'] for r in train];N=len(train)
-    for epoch in range(epochs):
-        gW=[[0.]*d for _ in range(3)];gb=[0.]*3
-        for z,y in zip(zs,ys):
-            p=softmax([b[c]+sum(W[c][j]*z[j] for j in range(d)) for c in range(3)])
-            for c in range(3):
-                e=p[c]-(1 if y==c else 0);gb[c]+=e
-                for j in range(d):gW[c][j]+=e*z[j]
-        rate=lr/(1+epoch/900)
-        for c in range(3):
-            b[c]-=rate*gb[c]/N
-            for j in range(d):W[c][j]-=rate*(gW[c][j]/N+l2*W[c][j])
-    return W,b
 def probs(r,W,b,m,s,temp=1):
-    z=zrow(r,m,s);p=softmax([(b[c]+sum(W[c][j]*z[j] for j in range(len(z))))/temp for c in range(3)]);return {'home':p[0],'draw':p[1],'away':p[2]}
+    return softmax_probabilities(r,FEATURES,m,s,W,b,temp)
 def metrics(rows,fn):
     if not rows:return {'matches':0}
     acc=bs=ll=0
     for r in rows:
         p=fn(r);pred=max(('home','draw','away'),key=lambda k:p[k]);actual=('home','draw','away')[r['y']];acc+=pred==actual;code=('H','D','A')[r['y']];bs+=brier(p,code);ll+=log_loss(p,code)
     n=len(rows);return {'matches':n,'accuracy':acc/n,'brier':bs/n,'logLoss':ll/n}
-def temperature(rows,W,b,m,s):
-    best=(1e9,1)
-    for i in range(61):
-        t=.55+i*.02;v=metrics(rows,lambda r:probs(r,W,b,m,s,t))['logLoss']
-        if v<best[0]:best=(v,t)
-    return best[1]
 def main():
     data=build_dataset(load_rows());train=[r for r in data if r['season'] in ('2023/24','2024/25')];s25=[r for r in data if r['season']=='2025/26'];split=len(s25)//2;cal,hold=s25[:split],s25[split:]
     if len(train)<500 or len(hold)<100:raise RuntimeError(f'Insufficient data train={len(train)} holdout={len(hold)}')
-    means,scales=standardize(train);W,b=fit(train,means,scales);temp=temperature(cal,W,b,means,scales);ensemble=metrics(hold,lambda r:probs(r,W,b,means,scales,temp));struct=metrics(hold,lambda r:r['base']);market_rows=[r for r in hold if r['x']['market_available']>0];market_m=metrics(market_rows,lambda r:{'home':r['x']['market_home'],'draw':r['x']['market_draw'],'away':r['x']['market_away']});payload={'enabled':True,'version':'3.0','trainedAt':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'trainingSeasons':['2023/24','2024/25'],'calibrationWindow':'first half 2025/26','holdoutWindow':'second half 2025/26','trainingSamples':len(train),'calibrationSamples':len(cal),'features':FEATURES,'means':means,'scales':scales,'coefficients':W,'intercepts':b,'temperature':temp,'holdout':{'ensemble':ensemble,'structural':struct,'market':market_m},'notes':'Holdout matches are not used for coefficient fitting or temperature selection.'};OUTPUT.write_text(json.dumps(payload,indent=2),encoding='utf-8');print(json.dumps(payload['holdout'],indent=2));return 0
+    fitted=fit_softmax_model(train,FEATURES);means,scales,W,b=fitted['means'],fitted['scales'],fitted['coefficients'],fitted['intercepts']
+    temp=fit_temperature(cal,FEATURES,means,scales,W,b,metrics)
+    ensemble=metrics(hold,lambda r:probs(r,W,b,means,scales,temp));struct=metrics(hold,lambda r:r['base']);market_rows=[r for r in hold if r['x']['market_available']>0];market_m=metrics(market_rows,lambda r:{'home':r['x']['market_home'],'draw':r['x']['market_draw'],'away':r['x']['market_away']})
+    payload={'enabled':True,'version':'3.0','trainer':'sklearn-logistic-regression-cv','trainedAt':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'trainingSeasons':['2023/24','2024/25'],'calibrationWindow':'first half 2025/26','holdoutWindow':'second half 2025/26','trainingSamples':len(train),'calibrationSamples':len(cal),'features':FEATURES,'means':means,'scales':scales,'coefficients':W,'intercepts':b,'temperature':temp,'regularization':{'chosenC':fitted['chosenC'],'cvFolds':fitted['cvFolds'],'method':'LogisticRegressionCV with TimeSeriesSplit, scikit-learn'},'holdout':{'ensemble':ensemble,'structural':struct,'market':market_m},'notes':'Holdout matches are not used for coefficient fitting, regularization selection, or temperature selection.'};OUTPUT.write_text(json.dumps(payload,indent=2),encoding='utf-8');print(json.dumps(payload['holdout'],indent=2));return 0
 if __name__=='__main__':raise SystemExit(main())

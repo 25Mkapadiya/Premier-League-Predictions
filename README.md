@@ -92,7 +92,13 @@ The `Train prediction ensemble` workflow retrains both learned models weekly fro
 - `data/trained_model.json`
 - `data/training_status.json`
 
-A no-market model is promoted only if it beats the structural baseline on **both Brier score and log loss** on the untouched holdout.
+Both are multinomial (softmax) logistic regressions fitted with **scikit-learn's `LogisticRegressionCV`** (`scripts/model_fit.py`), not a hand-rolled optimizer:
+
+- Feature standardization uses scikit-learn's `StandardScaler`, which is robust to zero-variance features (a feature that never varies in training gets scale 1.0, not a divide-by-near-zero blow-up if it varies later in production).
+- The L2 regularization strength is chosen by **time-respecting cross-validation** (`TimeSeriesSplit`) on the training split only — never guessed as a fixed constant, and never touching the calibration or holdout windows.
+- Post-fit probability calibration (temperature scaling) is solved with `scipy.optimize.minimize_scalar` against the calibration window.
+
+A no-market model is promoted only if it beats the structural baseline on **both Brier score and log loss** on the untouched holdout. Training dependencies (`numpy`, `scipy`, `scikit-learn`, pinned in `scripts/requirements-train.txt`) are only needed by the training workflow — serving predictions at request time uses the plain coefficients/intercepts/temperature exported to JSON and has no extra runtime dependency.
 
 ## Manual context
 

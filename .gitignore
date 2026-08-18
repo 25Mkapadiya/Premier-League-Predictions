@@ -1,3 +1,5 @@
 .DS_Store
 preview.png
 *.log
+__pycache__/
+*.pyc

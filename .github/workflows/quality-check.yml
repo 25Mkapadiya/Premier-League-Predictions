@@ -28,6 +28,7 @@ jobs:
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
           python -m py_compile scripts/run_refresh.py
+          python -m py_compile scripts/model_fit.py
           python -m py_compile scripts/train_ensemble.py
           python -m py_compile scripts/train_ensemble_fast.py
           python -m py_compile scripts/train_nomarket.py
