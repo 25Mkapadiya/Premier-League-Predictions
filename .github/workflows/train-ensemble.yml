@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "35 5 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - scripts/train_ensemble.py
+      - scripts/prediction_core.py
+      - .github/workflows/train-ensemble.yml
 
 permissions:
   contents: write
