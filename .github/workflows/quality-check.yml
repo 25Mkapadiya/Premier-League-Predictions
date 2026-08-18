@@ -17,13 +17,11 @@ jobs:
         run: |
           node --check app.js
           node --check app-v3.js
-      - name: Check forecasting Python
+      - name: Check no-key forecasting Python
         run: |
+          python -m py_compile scripts/public_sources.py
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/refresh_results.py
-          python -m py_compile scripts/external_enrichment.py
-          python -m py_compile scripts/fixture_market.py
-          python -m py_compile scripts/availability_sanitizer.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
           python -m py_compile scripts/train_ensemble.py
@@ -32,7 +30,7 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          for path in ['data/context.json','data/trained_model.json']:
+          for path in ['data/context.json','data/trained_model.json','data/training_status.json']:
               json.load(open(path))
               print(path, 'OK')
           PY
