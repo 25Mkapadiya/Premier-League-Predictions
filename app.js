@@ -1,213 +1,36 @@
-(() => {
-  const model = window.MODEL_DATA;
-  const fixtureData = window.FIXTURE_DATA;
-  const teams = Object.keys(model.teams).sort((a,b) => model.teams[a].display.localeCompare(model.teams[b].display));
-  let activeWeek = 1;
-
-  const $ = (sel, root=document) => root.querySelector(sel);
-  const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
-  const pct = n => `${Math.round(n * 100)}%`;
-  const teamMeta = key => model.teams[key];
-  const predictionCache = new Map();
-  const factorial = n => { let x = 1; for (let i = 2; i <= n; i++) x *= i; return x; };
-  const poisson = (k, lambda) => Math.exp(-lambda) * Math.pow(lambda, k) / factorial(k);
-
-  function prediction(home, away) {
-    const cacheKey = `${home}__${away}`;
-    if (predictionCache.has(cacheKey)) return predictionCache.get(cacheKey);
-
-    const h = teamMeta(home);
-    const a = teamMeta(away);
-    const params = model.params;
-    const eloDelta = (h.elo + params.eloHomeAdvantage - a.elo) / 400;
-    let homeXg = params.homeGoalRate * h.homeAtt * a.awayDef;
-    let awayXg = params.awayGoalRate * a.awayAtt * h.homeDef;
-    homeXg *= Math.exp(params.eloGoalWeight * eloDelta);
-    awayXg *= Math.exp(-params.eloGoalWeight * eloDelta);
-
-    const grid = [];
-    let total = 0;
-    for (let x = 0; x <= params.maxGoals; x++) {
-      for (let y = 0; y <= params.maxGoals; y++) {
-        let p = poisson(x, homeXg) * poisson(y, awayXg);
-        if (x === 0 && y === 0) p *= 1 - homeXg * awayXg * params.rho;
-        else if (x === 0 && y === 1) p *= 1 + homeXg * params.rho;
-        else if (x === 1 && y === 0) p *= 1 + awayXg * params.rho;
-        else if (x === 1 && y === 1) p *= 1 - params.rho;
-        grid.push({x, y, p});
-        total += p;
-      }
-    }
-
-    let homeWin = 0, draw = 0, awayWin = 0;
-    const topScore = grid.reduce((best, cell) => cell.p > best.p ? cell : best, grid[0]);
-    for (const cell of grid) {
-      cell.p /= total;
-      if (cell.x > cell.y) homeWin += cell.p;
-      else if (cell.x === cell.y) draw += cell.p;
-      else awayWin += cell.p;
-    }
-
-    const result = {
-      homeXg, awayXg, homeWin, draw, awayWin,
-      score: [Math.floor(homeXg + 0.5), Math.floor(awayXg + 0.5)],
-      topScore: [topScore.x, topScore.y]
-    };
-    predictionCache.set(cacheKey, result);
-    return result;
-  }
-
-  function teamBadge(key) {
-    const t = teamMeta(key);
-    return `<span class="badge" aria-hidden="true">${t.abbr}</span>`;
-  }
-
-  function teamBlock(key, side='home') {
-    const t = teamMeta(key);
-    return `<div class="team ${side === 'away' ? 'away' : ''}">
-      ${teamBadge(key)}
-      <div><div class="team-name">${t.display}</div><small>Power ${t.power.toFixed(1)}</small></div>
-    </div>`;
-  }
-
-  function getLean(home, away, p) {
-    const values = [p.homeWin, p.draw, p.awayWin];
-    const max = Math.max(...values);
-    if (max === p.draw) return 'Draw lean';
-    return max === p.homeWin ? `${teamMeta(home).display} lean` : `${teamMeta(away).display} lean`;
-  }
-
-  function formatKickoff(iso) {
-    const date = new Date(iso);
-    const datePart = new Intl.DateTimeFormat(undefined, {weekday:'short', month:'short', day:'numeric'}).format(date);
-    const timePart = new Intl.DateTimeFormat(undefined, {hour:'numeric', minute:'2-digit'}).format(date);
-    return `${datePart} · ${timePart}`;
-  }
-
-  function probabilityBlocks(home, away, p) {
-    const vals = [
-      {label: teamMeta(home).abbr, value:p.homeWin},
-      {label:'DRAW', value:p.draw},
-      {label:teamMeta(away).abbr, value:p.awayWin}
-    ];
-    const max = Math.max(...vals.map(v => v.value));
-    return `<div class="prob-bars">${vals.map(v => `<div class="prob ${v.value === max ? 'favorite' : ''}">
-      <div class="prob-top"><span>${v.label}</span><strong>${pct(v.value)}</strong></div>
-      <b><i style="--w:${pct(v.value)}"></i></b>
-    </div>`).join('')}</div>`;
-  }
-
-  function renderWeekTabs() {
-    const root = $('#week-tabs');
-    root.innerHTML = fixtureData.matchweeks.map(w => `<button class="week-tab ${w.matchweek===activeWeek?'active':''}" data-week="${w.matchweek}">MW ${w.matchweek}</button>`).join('');
-    $$('.week-tab', root).forEach(btn => btn.addEventListener('click', () => {
-      activeWeek = Number(btn.dataset.week);
-      renderWeekTabs();
-      renderFixtures();
-    }));
-  }
-
-  function renderFixtures() {
-    const week = fixtureData.matchweeks.find(w => w.matchweek === activeWeek);
-    $('#fixture-grid').innerHTML = week.fixtures.map((f, idx) => {
-      const p = prediction(f.home, f.away);
-      return `<article class="fixture-card">
-        <div class="fixture-meta"><span>${formatKickoff(f.kickoff)}</span><span class="fixture-lean">${getLean(f.home,f.away,p)}</span></div>
-        <div class="teams-row">
-          ${teamBlock(f.home,'home')}
-          <div class="score-prediction" aria-label="rounded expected score ${p.score[0]} to ${p.score[1]}"><strong>${p.score[0]}</strong><span>:</span><strong>${p.score[1]}</strong></div>
-          ${teamBlock(f.away,'away')}
-        </div>
-        ${probabilityBlocks(f.home,f.away,p)}
-      </article>`;
-    }).join('');
-  }
-
-  function renderSelects() {
-    const options = teams.map(k => `<option value="${k}">${teamMeta(k).display}</option>`).join('');
-    $('#home-select').innerHTML = options;
-    $('#away-select').innerHTML = options;
-    $('#home-select').value = 'Arsenal';
-    $('#away-select').value = 'Man City';
-    $('#home-select').addEventListener('change', ensureDistinctAndRender);
-    $('#away-select').addEventListener('change', ensureDistinctAndRender);
-    $('#swap-teams').addEventListener('click', () => {
-      const h = $('#home-select').value;
-      $('#home-select').value = $('#away-select').value;
-      $('#away-select').value = h;
-      renderLab();
-    });
-  }
-
-  function ensureDistinctAndRender(event) {
-    const h = $('#home-select').value;
-    const a = $('#away-select').value;
-    if (h === a) {
-      const other = teams.find(t => t !== h);
-      if (event.target.id === 'home-select') $('#away-select').value = other;
-      else $('#home-select').value = other;
-    }
-    renderLab();
-  }
-
-  function renderLab() {
-    const home = $('#home-select').value;
-    const away = $('#away-select').value;
-    const p = prediction(home, away);
-    const max = Math.max(p.homeWin,p.draw,p.awayWin);
-    const confidence = max >= .60 ? 'Strong lean' : max >= .48 ? 'Moderate lean' : 'Tight matchup';
-    $('#lab-result').innerHTML = `
-      <div class="fixture-meta"><span>${confidence}</span><span class="fixture-lean">${getLean(home,away,p)}</span></div>
-      <div class="teams-row">
-        ${teamBlock(home,'home')}
-        <div class="score-prediction"><strong>${p.score[0]}</strong><span>:</span><strong>${p.score[1]}</strong></div>
-        ${teamBlock(away,'away')}
-      </div>
-      <div class="lab-xg"><span>${teamMeta(home).abbr} xG <strong>${p.homeXg.toFixed(2)}</strong></span><span>${teamMeta(away).abbr} xG <strong>${p.awayXg.toFixed(2)}</strong></span></div>
-      ${probabilityBlocks(home,away,p)}
-    `;
-  }
-
-  function renderRankings() {
-    const ranked = [...teams].sort((a,b) => model.teams[b].power - model.teams[a].power);
-    $('#ranking-list').innerHTML = ranked.map((key, i) => {
-      const t = teamMeta(key);
-      return `<div class="ranking-row">
-        <div class="rank-team"><span class="rank-number">${i+1}</span>${teamBadge(key)}<strong>${t.display}${t.promoted?'<span class="promo-pill">PROMOTED</span>':''}</strong></div>
-        <div class="power-score">${t.power.toFixed(1)}</div>
-        <div class="attack-cell"><div class="stat-bar"><i style="--w:${t.attack}%"></i></div></div>
-        <div class="defense-cell"><div class="stat-bar def"><i style="--w:${t.defense}%"></i></div></div>
-        <div class="finish">${t.sourceFinish}</div>
-      </div>`;
-    }).join('');
-  }
-
-  function setView(name) {
-    $$('[data-view-panel]').forEach(el => el.classList.toggle('active', el.dataset.viewPanel === name));
-    $$('[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === name));
-    window.scrollTo({top: 80, behavior:'smooth'});
-  }
-
-  function bindNavigation() {
-    $$('[data-view]').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.view)));
-    $$('[data-view-target]').forEach(btn => btn.addEventListener('click', () => setView(btn.dataset.viewTarget)));
-    $$('[data-jump]').forEach(btn => btn.addEventListener('click', () => document.getElementById(btn.dataset.jump).scrollIntoView({behavior:'smooth'})));
-  }
-
-  function renderHero() {
-    const top = Object.keys(model.teams).sort((a,b) => model.teams[b].power - model.teams[a].power)[0];
-    const t = teamMeta(top);
-    $('#hero-signal').textContent = t.display;
-    $('#hero-score').textContent = t.power.toFixed(1);
-    $('#hero-attack').style.setProperty('--bar', `${t.attack}%`);
-    $('#hero-defense').style.setProperty('--bar', `${t.defense}%`);
-  }
-
-  renderHero();
-  renderWeekTabs();
-  renderFixtures();
-  renderSelects();
-  renderLab();
-  renderRankings();
-  bindNavigation();
+(()=>{
+const M=window.MODEL_DATA,F=window.FIXTURE_DATA;let L=window.LIVE_DATA||{meta:{},fixtures:[],table:[]},week=1,status='all',filter='';
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)],teams=Object.keys(M.teams).sort((a,b)=>M.teams[a].display.localeCompare(M.teams[b].display));
+const colors={Arsenal:'#c92f3c','Aston Villa':'#7f2345',Bournemouth:'#c62f39',Brentford:'#c9363d',Brighton:'#1f65b5',Chelsea:'#1954a6',Coventry:'#3aa7df','Crystal Palace':'#3059a9',Everton:'#2858a4',Fulham:'#333842',Hull:'#e2a214',Ipswich:'#3065c7',Leeds:'#d1c73f',Liverpool:'#bd3039','Man City':'#5aa9d5','Man United':'#c93137',Newcastle:'#3d424b',"Nott'm Forest":'#c83636',Sunderland:'#c8323a',Tottenham:'#d6dbe5'};
+const meta=k=>M.teams[k],esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])),pct=n=>`${Math.round(n*100)}%`;
+const fact=n=>{let x=1;for(let i=2;i<=n;i++)x*=i;return x},pois=(k,l)=>Math.exp(-l)*Math.pow(l,k)/fact(k),cache=new Map();
+function predict(h,a){const key=`${h}__${a}`;if(cache.has(key))return cache.get(key);const H=meta(h),A=meta(a),p=M.params,d=(H.elo+p.eloHomeAdvantage-A.elo)/400;let hx=p.homeGoalRate*H.homeAtt*A.awayDef,ax=p.awayGoalRate*A.awayAtt*H.homeDef;hx*=Math.exp(p.eloGoalWeight*d);ax*=Math.exp(-p.eloGoalWeight*d);let grid=[],total=0;for(let x=0;x<=p.maxGoals;x++)for(let y=0;y<=p.maxGoals;y++){let q=pois(x,hx)*pois(y,ax);if(x===0&&y===0)q*=1-hx*ax*p.rho;else if(x===0&&y===1)q*=1+hx*p.rho;else if(x===1&&y===0)q*=1+ax*p.rho;else if(x===1&&y===1)q*=1-p.rho;grid.push({x,y,p:q});total+=q}let hw=0,dr=0,aw=0,o25=0,bt=0;grid.forEach(c=>{c.p/=total;if(c.x>c.y)hw+=c.p;else if(c.x===c.y)dr+=c.p;else aw+=c.p;if(c.x+c.y>=3)o25+=c.p;if(c.x>0&&c.y>0)bt+=c.p});const top=[...grid].sort((a,b)=>b.p-a.p)[0],out={homeXg:hx,awayXg:ax,homeWin:hw,draw:dr,awayWin:aw,over25:o25,under25:1-o25,btts:bt,noBtts:1-bt,score:[Math.floor(hx+.5),Math.floor(ax+.5)],topScore:[top.x,top.y],topScoreProb:top.p};cache.set(key,out);return out}
+function badge(k,large=false){return `<span class="club-badge ${large?'large':''}" style="--club:${colors[k]||'#2c3544'}">${esc(meta(k).abbr)}</span>`}function mini(k){return `<span class="mini-badge" style="--club:${colors[k]||'#2c3544'}">${esc(meta(k).abbr)}</span>`}
+function schedule(){const lf=(L.fixtures||[]).filter(f=>f.matchweek&&M.teams[f.home]&&M.teams[f.away]&&f.kickoff);if(lf.length>=300){const g={};lf.forEach(f=>(g[f.matchweek]??=[]).push({home:f.home,away:f.away,kickoff:f.kickoff}));return Object.keys(g).map(Number).sort((a,b)=>a-b).map(n=>({matchweek:n,label:`Matchweek ${n}`,fixtures:g[n].sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff))}))}return F.matchweeks}
+function live(h,a){return(L.fixtures||[]).find(f=>f.home===h&&f.away===a)}function merge(f,mw){const x=live(f.home,f.away);return{...f,matchweek:mw,status:x?.status||'upcoming',homeScore:Number.isFinite(x?.homeScore)?x.homeScore:null,awayScore:Number.isFinite(x?.awayScore)?x.awayScore:null,minutes:x?.minutes??null,kickoff:x?.kickoff||f.kickoff}}
+const fdate=i=>new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric'}).format(new Date(i)),ftime=i=>new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(i));
+function syncDate(v){if(!v)return'Preseason snapshot';const d=new Date(v);return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(d)}
+function lean(h,a,p){return[{key:'H',label:meta(h).display,p:p.homeWin},{key:'D',label:'Draw',p:p.draw},{key:'A',label:meta(a).display,p:p.awayWin}].sort((x,y)=>y.p-x.p)[0]}function forecast(p){return[{k:'H',p:p.homeWin},{k:'D',p:p.draw},{k:'A',p:p.awayWin}].sort((x,y)=>y.p-x.p)[0].k}function actual(f){if(f.status!=='final'||f.homeScore==null)return null;return f.homeScore>f.awayScore?'H':f.homeScore<f.awayScore?'A':'D'}
+function conf(p){const m=Math.max(p.homeWin,p.draw,p.awayWin);return m>=.62?'High confidence':m>=.5?'Clear lean':m>=.42?'Moderate lean':'Tight matchup'}
+function pill(f){return f.status==='final'?'<span class="status-pill final">Final</span>':f.status==='live'?`<span class="status-pill live">${f.minutes?`${f.minutes}′`:'Live'}</span>`:'<span class="status-pill">Upcoming</span>'}
+function prob(label,v,b){return`<div class="outcome-box ${b?'best':''}"><span>${label}</span><strong>${pct(v)}</strong></div>`}
+function card(f){const p=predict(f.home,f.away),l=lean(f.home,f.away,p),a=actual(f),hit=a?a===forecast(p):null,max=Math.max(p.homeWin,p.draw,p.awayWin),g=p.over25>=.5?`Over 2.5 ${pct(p.over25)}`:`Under 2.5 ${pct(p.under25)}`,b=p.btts>=.5?`BTTS Yes ${pct(p.btts)}`:`BTTS No ${pct(p.noBtts)}`;return`<article class="match-card"><div class="match-main"><div class="match-time"><strong>${fdate(f.kickoff)}</strong>${ftime(f.kickoff)}${pill(f)}</div><div class="match-teams"><div class="match-team-row">${mini(f.home)}<span class="match-team-name">${esc(meta(f.home).display)}</span>${f.homeScore==null?'':`<strong class="actual-score">${f.homeScore}</strong>`}</div><div class="match-team-row">${mini(f.away)}<span class="match-team-name">${esc(meta(f.away).display)}</span>${f.awayScore==null?'':`<strong class="actual-score">${f.awayScore}</strong>`}</div></div><div class="predicted-score"><span>Forecast</span><strong>${p.score[0]} : ${p.score[1]}</strong><small>${conf(p)}</small></div><div class="outcome-probs">${prob('1',p.homeWin,p.homeWin===max)}${prob('X',p.draw,p.draw===max)}${prob('2',p.awayWin,p.awayWin===max)}</div></div><div class="market-row"><span class="market-chip accent"><span>1X2</span><strong>${esc(l.label)} ${pct(l.p)}</strong></span><span class="market-chip"><span>Goals</span><strong>${g}</strong></span><span class="market-chip"><span>BTTS</span><strong>${b}</strong></span><span class="market-chip"><span>Correct score</span><strong>${p.topScore[0]}:${p.topScore[1]} · ${pct(p.topScoreProb)}</strong></span>${a?`<span class="market-chip prediction-result ${hit?'hit':'miss'}">${hit?'Outcome pick hit':'Outcome pick missed'}</span>`:''}</div></article>`}
+function passes(f){if(status!=='all'&&f.status!==status)return false;if(filter){const q=filter.toLowerCase();if(!meta(f.home).display.toLowerCase().includes(q)&&!meta(f.away).display.toLowerCase().includes(q))return false}return true}
+function featured(){const ws=schedule(),w=ws.find(x=>x.matchweek===week)||ws[0],list=w.fixtures.map(f=>merge(f,w.matchweek)).filter(passes),f=list[0]||merge(w.fixtures[0],w.matchweek),p=predict(f.home,f.away),max=Math.max(p.homeWin,p.draw,p.awayWin),score=f.status!=='upcoming'&&f.homeScore!=null?`${f.homeScore}<i>:</i>${f.awayScore}`:`${p.score[0]}<i>:</i>${p.score[1]}`;$('#featured-match').innerHTML=`<div class="featured-kicker"><strong>${f.status==='final'?'Prediction review':'Featured prediction'}</strong><span>MW ${w.matchweek} · ${fdate(f.kickoff)} · ${ftime(f.kickoff)}</span></div><div class="featured-matchup"><div class="featured-team">${badge(f.home,true)}<div><h2>${esc(meta(f.home).display)}</h2><span>Power ${meta(f.home).power.toFixed(1)}</span></div></div><div class="featured-score"><div class="score">${score}</div><small>${f.status==='upcoming'?'rounded xG forecast':f.status==='final'?'final score':'current score'}</small></div><div class="featured-team away">${badge(f.away,true)}<div><h2>${esc(meta(f.away).display)}</h2><span>Power ${meta(f.away).power.toFixed(1)}</span></div></div></div><div class="featured-probs"><div class="featured-prob ${p.homeWin===max?'best':''}"><span>Home</span><strong>${pct(p.homeWin)}</strong></div><div class="featured-prob ${p.draw===max?'best':''}"><span>Draw</span><strong>${pct(p.draw)}</strong></div><div class="featured-prob ${p.awayWin===max?'best':''}"><span>Away</span><strong>${pct(p.awayWin)}</strong></div></div>`}
+function weekTabs(){$('#week-tabs').innerHTML=schedule().map(w=>`<button class="week-tab ${w.matchweek===week?'active':''}" data-week="${w.matchweek}">MW ${w.matchweek}</button>`).join('');$$('.week-tab').forEach(b=>b.onclick=()=>{week=+b.dataset.week;predictions()})}
+function predictions(){weekTabs();const ws=schedule(),w=ws.find(x=>x.matchweek===week)||ws[0],fs=w.fixtures.map(f=>merge(f,w.matchweek)).filter(passes);$('#fixture-feed').innerHTML=fs.map(card).join('');$('#fixture-empty').classList.toggle('hidden',!!fs.length);$('#match-count').textContent=`${fs.length} ${fs.length===1?'match':'matches'}`;featured()}
+function all(){return schedule().flatMap(w=>w.fixtures.map(f=>merge(f,w.matchweek)))}
+function results(){const fs=all().filter(f=>f.status==='final').sort((a,b)=>new Date(b.kickoff)-new Date(a.kickoff));$('#results-feed').innerHTML=fs.map(card).join('');$('#results-empty').classList.toggle('hidden',!!fs.length);let hits=0,exact=0;fs.forEach(f=>{const p=predict(f.home,f.away);if(actual(f)===forecast(p))hits++;if(p.score[0]===f.homeScore&&p.score[1]===f.awayScore)exact++});$('#result-summary').innerHTML=`<div class="summary-tile"><span>Matches reviewed</span><strong>${fs.length}</strong></div><div class="summary-tile"><span>Outcome hit rate</span><strong class="acid">${fs.length?pct(hits/fs.length):'—'}</strong></div><div class="summary-tile"><span>Rounded score hits</span><strong>${fs.length?`${exact}/${fs.length}`:'—'}</strong></div>`}
+function blank(){return teams.map(team=>({team,played:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0,form:[]}))}function rows(){if(!L.table?.length)return blank().sort((a,b)=>meta(b.team).power-meta(a.team).power);const s=new Set(L.table.map(x=>x.team));return[...L.table,...blank().filter(x=>!s.has(x.team))]}
+function form(x){return x?.length?`<div class="form-dots">${x.slice(-5).map(v=>`<span class="form-dot ${v}">${v}</span>`).join('')}</div>`:'<span class="form-empty">—</span>'}
+function table(){const r=rows(),played=r.some(x=>x.played>0);$('.table-card').classList.toggle('season-not-started',!played);$('#league-table').innerHTML=r.map((x,i)=>`<div class="league-table-row"><span class="table-num">${i+1}</span><div class="table-club">${mini(x.team)}<strong>${esc(meta(x.team).display)}</strong></div><span class="table-num">${x.played}</span><span class="table-num">${x.w}</span><span class="table-num">${x.d}</span><span class="table-num">${x.l}</span><span class="table-num">${x.gd>0?'+':''}${x.gd}</span><span class="table-num table-points">${x.pts}</span>${form(x.form)}</div>`).join('');$('#quick-table').innerHTML=r.slice(0,5).map((x,i)=>`<div class="quick-row"><span>${i+1}</span><div class="quick-club">${mini(x.team)}<strong>${esc(meta(x.team).display)}</strong></div><strong>${x.pts}</strong></div>`).join('')}
+function lab(){const h=$('#home-select').value,a=$('#away-select').value,p=predict(h,a),l=lean(h,a,p);$('#lab-result').innerHTML=`<div class="lab-hero"><div class="lab-team">${badge(h,true)}<div><h3>${esc(meta(h).display)}</h3><span>${p.homeXg.toFixed(2)} expected goals</span></div></div><div class="lab-score"><strong>${p.score[0]} : ${p.score[1]}</strong><span>rounded xG score</span></div><div class="lab-team away">${badge(a,true)}<div><h3>${esc(meta(a).display)}</h3><span>${p.awayXg.toFixed(2)} expected goals</span></div></div></div><div class="lab-probability"><div><span>Home win</span><strong>${pct(p.homeWin)}</strong></div><div><span>Draw</span><strong>${pct(p.draw)}</strong></div><div><span>Away win</span><strong>${pct(p.awayWin)}</strong></div></div><div class="lab-markets"><div class="lab-market"><span>Model lean</span><strong>${esc(l.label)} · ${pct(l.p)}</strong></div><div class="lab-market"><span>Goals 2.5</span><strong>${p.over25>=.5?'Over':'Under'} · ${pct(Math.max(p.over25,p.under25))}</strong></div><div class="lab-market"><span>Both score</span><strong>${p.btts>=.5?'Yes':'No'} · ${pct(Math.max(p.btts,p.noBtts))}</strong></div><div class="lab-market"><span>Top exact score</span><strong>${p.topScore[0]}:${p.topScore[1]} · ${pct(p.topScoreProb)}</strong></div></div>`}
+function insights(){const top=[...teams].sort((a,b)=>meta(b).power-meta(a).power)[0],t=meta(top);$('#signal-team').innerHTML=`${mini(top)}<span>${esc(t.display)}</span>`;$('#signal-power').textContent=t.power.toFixed(1);$('#signal-attack').style.width=`${t.attack}%`;$('#signal-defense').style.width=`${t.defense}%`;const n=all().filter(f=>f.status!=='final'&&new Date(f.kickoff)>=new Date()).sort((a,b)=>new Date(a.kickoff)-new Date(b.kickoff))[0]||all()[0];$('#next-kickoff').innerHTML=n?`<div class="next-teams">${mini(n.home)}<span>${esc(meta(n.home).display)} vs ${esc(meta(n.away).display)}</span></div><div class="next-meta">${fdate(n.kickoff)} · ${ftime(n.kickoff)}</div>`:'<span class="form-empty">No upcoming fixture</span>';const s=syncDate(L.meta?.lastUpdated);$('#last-sync').textContent=s;$('#sync-label').textContent=`Updated ${s}`}
+function clubs(){$('#club-shortcuts').innerHTML=teams.map(k=>`<button class="club-shortcut" data-club="${esc(meta(k).display)}">${mini(k)}<span>${esc(meta(k).display)}</span></button>`).join('');$$('.club-shortcut').forEach(b=>b.onclick=()=>{const on=b.classList.contains('active');filter=on?'':b.dataset.club;$('#team-search').value=filter;$$('.club-shortcut').forEach(x=>x.classList.toggle('active',x===b&&!on));predictions()})}
+function selects(){const o=teams.map(k=>`<option value="${esc(k)}">${esc(meta(k).display)}</option>`).join('');$('#home-select').innerHTML=o;$('#away-select').innerHTML=o;$('#home-select').value='Arsenal';$('#away-select').value='Man City'}
+function render(){predictions();results();table();lab();insights()}
+function view(n){$$('[data-view-panel]').forEach(x=>x.classList.toggle('active',x.dataset.viewPanel===n));$$('[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===n));window.scrollTo({top:0,behavior:'smooth'})}
+function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2500)}
+function refresh(){const bs=[$('#refresh-data'),$('#refresh-data-secondary')];bs.forEach(b=>{b.disabled=true;b.classList.add('loading')});document.querySelector('script[data-live-refresh]')?.remove();const s=document.createElement('script');s.dataset.liveRefresh='1';s.src=`data/live.js?v=${Date.now()}`;s.onload=()=>{L=window.LIVE_DATA||L;bs.forEach(b=>{b.disabled=false;b.classList.remove('loading')});render();toast(`Loaded snapshot from ${syncDate(L.meta?.lastUpdated)}`)};s.onerror=()=>{bs.forEach(b=>{b.disabled=false;b.classList.remove('loading')});toast('Could not reload the results snapshot.')};document.body.appendChild(s)}
+selects();clubs();$$('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));$$('[data-view-target]').forEach(b=>b.onclick=e=>{e.preventDefault();view(b.dataset.viewTarget)});$$('#prediction-status-tabs [data-filter]').forEach(b=>b.onclick=()=>{status=b.dataset.filter;$$('#prediction-status-tabs [data-filter]').forEach(x=>x.classList.toggle('active',x===b));predictions()});$('#team-search').oninput=e=>{filter=e.target.value.trim();$$('.club-shortcut').forEach(x=>x.classList.remove('active'));predictions()};$('#home-select').onchange=()=>{if($('#home-select').value===$('#away-select').value)$('#away-select').value=teams.find(t=>t!==$('#home-select').value);lab()};$('#away-select').onchange=()=>{if($('#home-select').value===$('#away-select').value)$('#home-select').value=teams.find(t=>t!==$('#away-select').value);lab()};$('#swap-teams').onclick=()=>{const h=$('#home-select').value;$('#home-select').value=$('#away-select').value;$('#away-select').value=h;lab()};$('#refresh-data').onclick=refresh;$('#refresh-data-secondary').onclick=refresh;render();
 })();
