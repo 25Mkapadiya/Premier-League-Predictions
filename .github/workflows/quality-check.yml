@@ -17,6 +17,7 @@ jobs:
         run: |
           node --check app.js
           node --check app-v3.js
+          node --check noapi-ui.js
       - name: Check no-key forecasting Python
         run: |
           python -m py_compile scripts/public_sources.py
@@ -24,6 +25,7 @@ jobs:
           python -m py_compile scripts/refresh_results.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
+          python -m py_compile scripts/run_refresh.py
           python -m py_compile scripts/train_ensemble.py
           python -m py_compile scripts/train_ensemble_fast.py
       - name: Check JSON configuration
@@ -44,6 +46,7 @@ jobs:
           for element_id in ['fixture-feed','featured-match','league-table','home-select','away-select','refresh-data','results-feed']:
               assert f'id="{element_id}"' in html, element_id
           assert 'app-v3.js' in html
+          assert 'noapi-ui.js' in html
           assert 'accuracy.css' in html
           print('HTML hooks OK')
           PY
