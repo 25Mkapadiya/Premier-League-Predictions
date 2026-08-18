@@ -4,12 +4,15 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "7 * * * *"
+    - cron: "37 10-22 * * *"
   push:
     branches: [main]
     paths:
       - scripts/prediction_core.py
       - scripts/refresh_results.py
       - scripts/external_enrichment.py
+      - scripts/fixture_market.py
+      - scripts/availability_sanitizer.py
       - scripts/build_predictions.py
       - scripts/refresh_snapshot.py
       - .github/workflows/refresh-results.yml
@@ -40,6 +43,8 @@ jobs:
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/refresh_results.py
           python -m py_compile scripts/external_enrichment.py
+          python -m py_compile scripts/fixture_market.py
+          python -m py_compile scripts/availability_sanitizer.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
       - name: Refresh and build prediction snapshot
