@@ -12,6 +12,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -36,6 +37,14 @@ def team_key(value):
     return ALIASES.get((value or '').strip())
 
 
+def _plain_text_snippet(body, limit=160):
+    """Strip HTML markup from an error response body so a server error page
+    reads as prose in the (user-facing) health panel, not a raw HTML dump."""
+    text = re.sub(r'<[^>]+>', ' ', body)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text[:limit].rstrip()
+
+
 def request_bytes(url, timeout=30, ajax=False):
     headers={
         'User-Agent':'Mozilla/5.0 (compatible; PL-Forecast-NoKey/4.0)',
@@ -52,11 +61,13 @@ def request_bytes(url, timeout=30, ajax=False):
     except urllib.error.HTTPError as exc:
         # Surface the response body (not just the status line) so a stale/ambiguous
         # URL is diagnosable from the recorded message instead of a bare status code.
+        # This message is shown as-is in the site's health panel, so it must read as
+        # plain text, not raw HTML.
         detail=''
-        try:detail=exc.read(300).decode('utf-8',errors='replace').strip()
+        try:detail=_plain_text_snippet(exc.read(2000).decode('utf-8',errors='replace'))
         except Exception:pass
         message=f'HTTP {exc.code} {exc.reason}'
-        if detail:message+=f' :: {detail[:200]}'
+        if detail:message+=f' :: {detail}'
         raise RuntimeError(message) from exc
 
 
