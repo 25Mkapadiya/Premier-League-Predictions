@@ -12,6 +12,7 @@ on:
       - scripts/refresh_results.py
       - scripts/build_predictions.py
       - scripts/refresh_snapshot.py
+      - scripts/run_refresh.py
       - data/trained_model.json
       - data/context.json
       - .github/workflows/refresh-results.yml
@@ -38,16 +39,17 @@ jobs:
           python -m py_compile scripts/refresh_results.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
+          python -m py_compile scripts/run_refresh.py
       - name: Refresh public data and forecasts
-        run: python scripts/refresh_snapshot.py
-      - name: Commit refreshed snapshot
+        run: python scripts/run_refresh.py
+      - name: Commit refreshed snapshot and diagnostic
         run: |
-          if git diff --quiet -- data/live.js; then
+          if git diff --quiet -- data/live.js data/refresh_status.json; then
             echo "No data changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/live.js
+          git add data/live.js data/refresh_status.json
           git commit -m "Refresh no-key Premier League forecasts"
           git push
