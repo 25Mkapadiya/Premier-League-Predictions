@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Data-driven Premier League 2026/27 match predictions using Poisson scoring, Elo strength, and Dixon-Coles correction." />
+  <title>Premier League Predictor 2026/27</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Premier League Predictor home">
+        <span class="brand-mark">PL</span>
+        <span>
+          <strong>Predictor</strong>
+          <small>2026/27</small>
+        </span>
+      </a>
+      <nav class="top-nav" aria-label="Primary navigation">
+        <button class="nav-link active" data-view="predictions">Predictions</button>
+        <button class="nav-link" data-view="lab">Matchup Lab</button>
+        <button class="nav-link" data-view="rankings">Power Rankings</button>
+        <button class="nav-link" data-view="method">Method</button>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="live-dot"></span> Preseason model snapshot · Aug 17, 2026</span>
+          <h1>Premier League predictions that show their work.</h1>
+          <p>Match probabilities, expected goals, and power ratings built from three seasons of results, home advantage, Elo team strength, and a promoted-team adjustment.</p>
+          <div class="hero-actions">
+            <button class="primary-button" data-jump="fixtures">See Matchweek 1</button>
+            <button class="secondary-button" data-view-target="lab">Build a matchup</button>
+          </div>
+        </div>
+        <div class="hero-panel" aria-label="Model summary">
+          <div class="hero-panel-top">
+            <span>MODEL SIGNAL</span>
+            <strong id="hero-signal">Arsenal</strong>
+          </div>
+          <div class="signal-score" id="hero-score">84.0</div>
+          <div class="signal-label">highest preseason power rating</div>
+          <div class="mini-bars">
+            <div><span>Attack</span><b id="hero-attack"></b></div>
+            <div><span>Defense</span><b id="hero-defense"></b></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metric-strip" aria-label="Model metrics">
+        <article><strong>1,692</strong><span>source matches</span></article>
+        <article><strong>48.7%</strong><span>rolling 3-way hit rate</span></article>
+        <article><strong>+6.1 pts</strong><span>vs. naive home pick</span></article>
+        <article><strong>20</strong><span>2026/27 clubs modeled</span></article>
+      </section>
+
+      <section class="view active" id="view-predictions" data-view-panel="predictions">
+        <div class="section-heading" id="fixtures">
+          <div>
+            <span class="eyebrow">Opening schedule</span>
+            <h2>Match predictions</h2>
+          </div>
+          <div class="week-tabs" id="week-tabs" aria-label="Matchweek selector"></div>
+        </div>
+        <div class="fixture-grid" id="fixture-grid"></div>
+        <div class="disclaimer">Probabilities are model estimates, not guarantees or betting advice. Fixtures can change after the league publishes broadcast amendments.</div>
+      </section>
+
+      <section class="view" id="view-lab" data-view-panel="lab">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Any matchup</span>
+            <h2>Matchup Lab</h2>
+          </div>
+          <p>Choose a home and away team to inspect the same model used for the fixture cards.</p>
+        </div>
+        <div class="lab-layout">
+          <div class="lab-controls card">
+            <label>Home team<select id="home-select"></select></label>
+            <button id="swap-teams" class="swap-button" aria-label="Swap home and away teams">⇄</button>
+            <label>Away team<select id="away-select"></select></label>
+          </div>
+          <div class="lab-result card" id="lab-result"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-rankings" data-view-panel="rankings">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Preseason strength</span>
+            <h2>Power rankings</h2>
+          </div>
+          <p>Power combines expected goal difference and team strength. Promoted clubs are translated from Championship performance to Premier League level.</p>
+        </div>
+        <div class="ranking-card card">
+          <div class="ranking-head"><span>Club</span><span>Power</span><span>Attack</span><span>Defense</span><span>2025/26</span></div>
+          <div id="ranking-list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-method" data-view-panel="method">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Transparent by design</span>
+            <h2>How the model works</h2>
+          </div>
+          <p>No black-box “AI confidence” score. Every prediction comes from a reproducible statistical pipeline.</p>
+        </div>
+        <div class="method-grid">
+          <article class="card method-card"><span>01</span><h3>Venue-adjusted scoring</h3><p>Home and away attack and defensive rates are estimated separately, then shrunk toward league averages to reduce noise.</p></article>
+          <article class="card method-card"><span>02</span><h3>Elo strength layer</h3><p>Three Premier League seasons feed an Elo rating that responds to results, opponent quality, score margin, and home advantage.</p></article>
+          <article class="card method-card"><span>03</span><h3>Promotion translation</h3><p>Coventry, Ipswich, and Hull are not treated as if Championship scoring transfers directly. Their rates are adjusted to historical promoted-team Premier League levels.</p></article>
+          <article class="card method-card"><span>04</span><h3>Dixon-Coles correction</h3><p>A low-score correction improves Poisson estimates for 0-0, 1-0, 0-1, and 1-1 results, where football scores are not perfectly independent.</p></article>
+        </div>
+        <div class="validation card">
+          <div><span class="eyebrow">Historical check</span><h3>2025/26 rolling backtest</h3><p>The model is evaluated pre-match, updating only with results available before each fixture date.</p></div>
+          <div class="validation-metrics">
+            <div><strong>48.7%</strong><span>top-outcome accuracy</span></div>
+            <div><strong>42.6%</strong><span>always-pick-home baseline</span></div>
+            <div><strong>0.628</strong><span>Brier score</span></div>
+          </div>
+        </div>
+        <div class="sources card">
+          <h3>Data sources</h3>
+          <p><a href="https://www.premierleague.com/en/news/4675097/all-380-fixtures-for-202627-premier-league-season" target="_blank" rel="noreferrer">PremierLeague.com</a> for the official 2026/27 fixture release.</p>
+          <p><a href="https://www.football-data.co.uk/englandm.php" target="_blank" rel="noreferrer">Football-Data.co.uk</a> for historical Premier League and Championship results.</p>
+          <p><a href="https://arxiv.org/abs/2307.02139" target="_blank" rel="noreferrer">Dixon-Coles methodology reference</a> for low-score dependence in football score models.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Premier League Predictor · independent fan project</span>
+      <span>Model snapshot: Aug 17, 2026</span>
+    </footer>
+  </div>
+
+  <script src="data/model.js"></script>
+  <script src="data/fixtures.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
