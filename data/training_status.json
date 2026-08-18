@@ -1,0 +1,28 @@
+{
+  "updated": "2026-08-18T16:32:31.349980Z",
+  "success": true,
+  "exitCode": 0,
+  "modelEnabled": true,
+  "holdout": {
+    "ensemble": {
+      "matches": 190,
+      "accuracy": 0.4421052631578947,
+      "brier": 0.6332054245757324,
+      "logLoss": 1.0473047372793511
+    },
+    "structural": {
+      "matches": 190,
+      "accuracy": 0.43157894736842106,
+      "brier": 0.6615942960279846,
+      "logLoss": 1.0892507701472471
+    },
+    "market": {
+      "matches": 190,
+      "accuracy": 0.45789473684210524,
+      "brier": 0.6347439643495971,
+      "logLoss": 1.0501414020994284
+    }
+  },
+  "trainingSamples": 760,
+  "logTail": "{\n  \"ensemble\": {\n    \"matches\": 190,\n    \"accuracy\": 0.4421052631578947,\n    \"brier\": 0.6332054245757324,\n    \"logLoss\": 1.0473047372793511\n  },\n  \"structural\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6615942960279846,\n    \"logLoss\": 1.0892507701472471\n  },\n  \"market\": {\n    \"matches\": 190,\n    \"accuracy\": 0.45789473684210524,\n    \"brier\": 0.6347439643495971,\n    \"logLoss\": 1.0501414020994284\n  }\n}\n"
+}

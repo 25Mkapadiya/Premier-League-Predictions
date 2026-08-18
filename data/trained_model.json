@@ -1,13 +1,127 @@
 {
-  "enabled": false,
+  "enabled": true,
   "version": "3.0",
-  "message": "Run the Train prediction ensemble GitHub Action to fit time-ordered weights from historical Premier League data. Until then the production engine uses the dynamic score model plus market consensus when available.",
-  "features": [],
-  "means": {},
-  "scales": {},
-  "coefficients": [],
-  "intercepts": [],
-  "temperature": 1.0,
-  "trainingSamples": 0,
-  "holdout": null
+  "trainer": "fast-softmax-v1",
+  "trainedAt": "2026-08-18T16:32:31.322967Z",
+  "trainingSeasons": [
+    "2023/24",
+    "2024/25"
+  ],
+  "calibrationWindow": "first half 2025/26",
+  "holdoutWindow": "second half 2025/26",
+  "trainingSamples": 760,
+  "calibrationSamples": 190,
+  "features": [
+    "base_home",
+    "base_draw",
+    "base_away",
+    "market_home",
+    "market_draw",
+    "market_away",
+    "market_available",
+    "form_ppm_diff",
+    "gdpg_diff",
+    "sotdiff_diff",
+    "rest_diff",
+    "availability_diff"
+  ],
+  "means": {
+    "base_home": 0.46552329241212775,
+    "base_draw": 0.229909646383665,
+    "base_away": 0.3045670612042073,
+    "market_home": 0.4476640433891907,
+    "market_draw": 0.22721528948500927,
+    "market_away": 0.32512066712580007,
+    "market_available": 1.0,
+    "form_ppm_diff": -0.0366441160385508,
+    "gdpg_diff": -0.040166831362360336,
+    "sotdiff_diff": -0.1527392731573205,
+    "rest_diff": 0.06447368421052632,
+    "availability_diff": 0.0
+  },
+  "scales": {
+    "base_home": 0.19343374852807266,
+    "base_draw": 0.04873601842645802,
+    "base_away": 0.17169730364904465,
+    "market_home": 0.1987691612771424,
+    "market_draw": 0.047245243090608846,
+    "market_away": 0.18066766609155463,
+    "market_available": 1e-06,
+    "form_ppm_diff": 0.9573289821336679,
+    "gdpg_diff": 1.450824317938428,
+    "sotdiff_diff": 3.297948916813579,
+    "rest_diff": 1.776675400911062,
+    "availability_diff": 1e-06
+  },
+  "coefficients": [
+    [
+      0.02950671600509494,
+      -0.01851422020247855,
+      -0.027986958470247677,
+      0.2351373157427129,
+      -0.05296726039046303,
+      -0.24484511755263366,
+      0.0,
+      -0.025748332955159048,
+      -0.12275537820097451,
+      0.2169802879672088,
+      -0.028922715279884853,
+      0.0
+    ],
+    [
+      -0.015110883111001155,
+      -0.0009830353671071966,
+      0.017302915831271595,
+      0.006703509618316476,
+      0.0901072467727911,
+      -0.03093851757413779,
+      0.0,
+      -0.011271688304221712,
+      0.17019506968821219,
+      -0.09582218500486493,
+      0.0232890648311772,
+      0.0
+    ],
+    [
+      -0.014395832894093815,
+      0.019497255569585762,
+      0.010684042638976146,
+      -0.24184082536102938,
+      -0.037139986382328065,
+      0.27578363512677173,
+      0.0,
+      0.037020021259380795,
+      -0.04743969148723792,
+      -0.12115810296234378,
+      0.005633650448707631,
+      0.0
+    ]
+  ],
+  "intercepts": [
+    0.2826211665407681,
+    -0.23936315098520689,
+    -0.04325801555556144
+  ],
+  "temperature": 0.97,
+  "holdout": {
+    "ensemble": {
+      "matches": 190,
+      "accuracy": 0.4421052631578947,
+      "brier": 0.6332054245757324,
+      "logLoss": 1.0473047372793511
+    },
+    "structural": {
+      "matches": 190,
+      "accuracy": 0.43157894736842106,
+      "brier": 0.6615942960279846,
+      "logLoss": 1.0892507701472471
+    },
+    "market": {
+      "matches": 190,
+      "accuracy": 0.45789473684210524,
+      "brier": 0.6347439643495971,
+      "logLoss": 1.0501414020994284
+    }
+  },
+  "notes": "Coefficient fitting and temperature selection never use the second-half 2025/26 holdout."
 }
