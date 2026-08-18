@@ -14,9 +14,25 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check JavaScript syntax
-        run: node --check app.js
-      - name: Check refresh script syntax
-        run: python -m py_compile scripts/refresh_results.py
+        run: |
+          node --check app.js
+          node --check app-v3.js
+      - name: Check forecasting Python
+        run: |
+          python -m py_compile scripts/prediction_core.py
+          python -m py_compile scripts/refresh_results.py
+          python -m py_compile scripts/external_enrichment.py
+          python -m py_compile scripts/build_predictions.py
+          python -m py_compile scripts/refresh_snapshot.py
+          python -m py_compile scripts/train_ensemble.py
+      - name: Check JSON configuration
+        run: |
+          python - <<'PY'
+          import json
+          for path in ['data/context.json','data/trained_model.json']:
+              json.load(open(path))
+              print(path, 'OK')
+          PY
       - name: Check required page hooks
         run: |
           python - <<'PY'
@@ -26,5 +42,7 @@ jobs:
           HTMLParser().feed(html)
           for element_id in ['fixture-feed','featured-match','league-table','home-select','away-select','refresh-data','results-feed']:
               assert f'id="{element_id}"' in html, element_id
+          assert 'app-v3.js' in html
+          assert 'accuracy.css' in html
           print('HTML hooks OK')
           PY
