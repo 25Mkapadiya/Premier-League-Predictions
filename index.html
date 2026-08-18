@@ -23,26 +23,107 @@
         <button class="nav-item" data-view="lab">Matchup Lab</button>
         <button class="nav-item" data-view="method">Model</button>
       </nav>
-      <div class="sync-cluster"><div class="sync-copy"><span class="sync-dot"></span><span id="sync-label">Snapshot ready</span></div><button class="icon-button refresh-button" id="refresh-data" title="Reload latest committed prediction snapshot" aria-label="Reload prediction snapshot">↻</button></div>
+      <div class="sync-cluster">
+        <div class="sync-copy"><span class="sync-dot"></span><span id="sync-label">Snapshot ready</span></div>
+        <button class="icon-button refresh-button" id="refresh-data" title="Reload latest committed prediction snapshot" aria-label="Reload prediction snapshot">↻</button>
+      </div>
     </div>
   </header>
-  <div class="mobile-nav" aria-label="Mobile navigation"><button class="mobile-nav-item active" data-view="predictions">Predictions</button><button class="mobile-nav-item" data-view="results">Results</button><button class="mobile-nav-item" data-view="table">Table</button><button class="mobile-nav-item" data-view="lab">Lab</button><button class="mobile-nav-item" data-view="method">Model</button></div>
+
+  <div class="mobile-nav" aria-label="Mobile navigation">
+    <button class="mobile-nav-item active" data-view="predictions">Predictions</button>
+    <button class="mobile-nav-item" data-view="results">Results</button>
+    <button class="mobile-nav-item" data-view="table">Table</button>
+    <button class="mobile-nav-item" data-view="lab">Lab</button>
+    <button class="mobile-nav-item" data-view="method">Model</button>
+  </div>
+
   <div class="app-shell">
     <aside class="left-rail">
-      <div class="league-card"><div class="league-identity"><div class="league-badge">PL</div><div><span>England</span><strong>Premier League</strong></div></div><div class="league-meta"><span>2026/27</span><span>20 clubs</span></div></div>
-      <div class="rail-group"><span class="rail-label">Competition</span><button class="rail-link active" data-view="predictions"><span>◎</span> Match predictions</button><button class="rail-link" data-view="results"><span>✓</span> Results</button><button class="rail-link" data-view="table"><span>≡</span> League table</button><button class="rail-link" data-view="lab"><span>↔</span> Matchup lab</button><button class="rail-link" data-view="method"><span>⌁</span> Model details</button></div>
-      <div class="rail-group"><span class="rail-label">Find a club</span><label class="search-box" aria-label="Filter matches by club"><span>⌕</span><input id="team-search" type="search" placeholder="Search club" autocomplete="off" /></label><div class="club-shortcuts" id="club-shortcuts"></div></div>
+      <div class="league-card">
+        <div class="league-identity"><div class="league-badge">PL</div><div><span>England</span><strong>Premier League</strong></div></div>
+        <div class="league-meta"><span>2026/27</span><span>20 clubs</span></div>
+      </div>
+      <div class="rail-group">
+        <span class="rail-label">Competition</span>
+        <button class="rail-link active" data-view="predictions"><span>◎</span> Match predictions</button>
+        <button class="rail-link" data-view="results"><span>✓</span> Results</button>
+        <button class="rail-link" data-view="table"><span>≡</span> League table</button>
+        <button class="rail-link" data-view="lab"><span>↔</span> Matchup lab</button>
+        <button class="rail-link" data-view="method"><span>⌁</span> Model details</button>
+      </div>
+      <div class="rail-group">
+        <span class="rail-label">Find a club</span>
+        <label class="search-box" aria-label="Filter matches by club"><span>⌕</span><input id="team-search" type="search" placeholder="Search club" autocomplete="off" /></label>
+        <div class="club-shortcuts" id="club-shortcuts"></div>
+      </div>
       <div class="rail-note"><span class="mini-kicker">Forecast policy</span><strong>Timestamped before kickoff.</strong><p>Finished matches keep the exact forecast that existed before kickoff. No hindsight edits.</p></div>
     </aside>
+
     <main class="main-column">
-      <section class="view active" data-view-panel="predictions"><div class="page-heading"><div><div class="breadcrumb"><span>Football</span><i>/</i><span>Premier League</span></div><h1>Premier League predictions</h1><p>Calibrated 1X2 probabilities and coherent score markets built from team strength, current form, rest, availability and market evidence when available.</p></div><div class="heading-stamp"><span>ENGINE</span><strong>v3.0</strong></div></div><div class="section-tabs" id="prediction-status-tabs"><button class="section-tab active" data-filter="all">All matches</button><button class="section-tab" data-filter="upcoming">Upcoming</button><button class="section-tab" data-filter="final">Finished</button></div><section class="featured-card" id="featured-match" aria-label="Featured prediction"></section><div class="content-toolbar"><div><span class="toolbar-label">Schedule</span><div class="week-tabs" id="week-tabs"></div></div><div class="toolbar-count" id="match-count"></div></div><div class="match-feed" id="fixture-feed"></div><div class="empty-state hidden" id="fixture-empty"><strong>No matches in this view.</strong><span>Try another matchweek or clear the club filter.</span></div></section>
-      <section class="view" data-view-panel="results"><div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Premier League</span><i>/</i><span>Audit</span></div><h1>Results & prediction review</h1><p>Every completed match keeps its pre-kickoff forecast. Performance is measured with outcome accuracy, Brier score and log loss.</p></div></div><div class="result-summary" id="result-summary"></div><div class="match-feed" id="results-feed"></div><div class="empty-state" id="results-empty"><strong>No Premier League results yet.</strong><span>Finished scores and locked forecasts will appear here as the season progresses.</span></div></section>
-      <section class="view" data-view-panel="table"><div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Premier League</span><i>/</i><span>Standings</span></div><h1>League table</h1><p>Calculated from finished fixtures in the latest data snapshot.</p></div></div><div class="table-card"><div class="league-table-head"><span>Pos</span><span>Club</span><span>P</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span><span>Form</span></div><div id="league-table"></div></div></section>
-      <section class="view" data-view-panel="lab"><div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Tools</span><i>/</i><span>Simulator</span></div><h1>Matchup Lab</h1><p>Run any matchup through the structural score model. Scheduled fixture cards can use additional timestamped data that a hypothetical matchup does not have.</p></div></div><div class="lab-grid"><div class="lab-controls panel"><div class="control-heading"><span>Configure match</span><small>Home advantage is applied automatically</small></div><label>Home club<select id="home-select"></select></label><button class="swap-button" id="swap-teams">Swap home / away ↔</button><label>Away club<select id="away-select"></select></label></div><div class="lab-output panel" id="lab-result"></div></div></section>
-      <section class="view" data-view-panel="method"><div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Model</span><i>/</i><span>Methodology</span></div><h1>How the forecast works</h1><p>The site uses the strongest data layer available for each match and falls back cleanly when an optional feed is missing.</p></div></div><div class="method-stack"><article class="method-row"><span class="method-number">01</span><div><h3>Structural score model</h3><p>Venue-adjusted attack and defense, Elo, Poisson scoring and Dixon-Coles low-score correction create the underlying score distribution.</p></div></article><article class="method-row"><span class="method-number">02</span><div><h3>Dynamic recent performance</h3><p>Up to eight completed matches are compared with the model's prior expectations. Recent games count more, opponent strength matters, and samples are shrunk toward neutral.</p></div></article><article class="method-row"><span class="method-number">03</span><div><h3>xG, shots and availability</h3><p>Historical match statistics are refreshed from Football-Data. Sportmonks xG and near-kickoff lineup/injury context are used when their secrets are configured; missing feeds are never guessed.</p></div></article><article class="method-row"><span class="method-number">04</span><div><h3>Rest & fixture congestion</h3><p>Rest-day differences and recent match load apply deliberately small, capped adjustments instead of overwhelming team quality.</p></div></article><article class="method-row"><span class="method-number">05</span><div><h3>Fair bookmaker consensus</h3><p>When current odds are available, bookmaker margins are removed first. The consensus then acts as a separate signal rather than being mistaken for raw probability.</p></div></article><article class="method-row"><span class="method-number">06</span><div><h3>Walk-forward learned ensemble</h3><p>A time-ordered training workflow learns how much to trust structural, form, market and schedule features, calibrates probabilities on an earlier slice, and reports an untouched later holdout.</p></div></article><article class="method-row"><span class="method-number">07</span><div><h3>Coherent score markets</h3><p>After the 1X2 ensemble is calibrated, the score lambdas are realigned so correct score, BTTS and totals remain consistent with the final match probabilities.</p></div></article><article class="method-row"><span class="method-number">08</span><div><h3>Forecast locking</h3><p>At kickoff the prediction freezes. Results are graded against what the model knew beforehand, preventing hindsight leakage.</p></div></article></div><div class="validation-panel panel"><div><span class="mini-kicker">Evaluation policy</span><h2>Accuracy has to survive unseen matches.</h2><p>Baseline metrics remain visible until the trained v3 holdout exists. A new feature is only promoted when it improves probability quality outside its fitting window.</p></div><div class="validation-grid"><div><strong>48.7%</strong><span>legacy 3-way baseline</span></div><div><strong>0.628</strong><span>legacy Brier</span></div><div><strong>Holdout</strong><span>v3 trained weekly</span></div><div><strong>Frozen</strong><span>forecast at kickoff</span></div></div></div><div class="sources-panel panel"><h3>Data sources</h3><div class="source-list"><a href="https://www.premierleague.com/en/news/4675097/all-380-fixtures-for-202627-premier-league-season" target="_blank" rel="noreferrer"><span>Official schedule</span><strong>PremierLeague.com ↗</strong></a><a href="https://www.football-data.co.uk/englandm.php" target="_blank" rel="noreferrer"><span>Results, shots & historical odds</span><strong>Football-Data.co.uk ↗</strong></a><a href="https://fantasy.premierleague.com/api/fixtures/" target="_blank" rel="noreferrer"><span>Fixture/result refresh</span><strong>Fantasy Premier League ↗</strong></a><a href="https://the-odds-api.com/" target="_blank" rel="noreferrer"><span>Optional bookmaker consensus</span><strong>The Odds API ↗</strong></a><a href="https://www.sportmonks.com/football-api/" target="_blank" rel="noreferrer"><span>Optional xG enrichment</span><strong>Sportmonks ↗</strong></a><a href="https://www.api-football.com/" target="_blank" rel="noreferrer"><span>Optional lineups / injuries</span><strong>API-Football ↗</strong></a></div></div></section>
+      <section class="view active" data-view-panel="predictions">
+        <div class="page-heading">
+          <div><div class="breadcrumb"><span>Football</span><i>/</i><span>Premier League</span></div><h1>Premier League predictions</h1><p>Calibrated 1X2 probabilities and coherent score markets built from team strength, current form, xG, shots, rest and public market evidence when available.</p></div>
+          <div class="heading-stamp"><span>ENGINE</span><strong>v4.0</strong></div>
+        </div>
+        <div class="section-tabs" id="prediction-status-tabs"><button class="section-tab active" data-filter="all">All matches</button><button class="section-tab" data-filter="upcoming">Upcoming</button><button class="section-tab" data-filter="final">Finished</button></div>
+        <section class="featured-card" id="featured-match" aria-label="Featured prediction"></section>
+        <div class="content-toolbar"><div><span class="toolbar-label">Schedule</span><div class="week-tabs" id="week-tabs"></div></div><div class="toolbar-count" id="match-count"></div></div>
+        <div class="match-feed" id="fixture-feed"></div>
+        <div class="empty-state hidden" id="fixture-empty"><strong>No matches in this view.</strong><span>Try another matchweek or clear the club filter.</span></div>
+      </section>
+
+      <section class="view" data-view-panel="results">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Premier League</span><i>/</i><span>Audit</span></div><h1>Results & prediction review</h1><p>Every completed match keeps its pre-kickoff forecast. Performance is measured with outcome accuracy, Brier score and log loss.</p></div></div>
+        <div class="result-summary" id="result-summary"></div>
+        <div class="match-feed" id="results-feed"></div>
+        <div class="empty-state" id="results-empty"><strong>No Premier League results yet.</strong><span>Finished scores and locked forecasts will appear here as the season progresses.</span></div>
+      </section>
+
+      <section class="view" data-view-panel="table">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Premier League</span><i>/</i><span>Standings</span></div><h1>League table</h1><p>Calculated from finished fixtures in the latest data snapshot.</p></div></div>
+        <div class="table-card"><div class="league-table-head"><span>Pos</span><span>Club</span><span>P</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span><span>Form</span></div><div id="league-table"></div></div>
+      </section>
+
+      <section class="view" data-view-panel="lab">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Tools</span><i>/</i><span>Simulator</span></div><h1>Matchup Lab</h1><p>Run any matchup through the structural score model. Scheduled fixture cards can use additional timestamped data that a hypothetical matchup does not have.</p></div></div>
+        <div class="lab-grid">
+          <div class="lab-controls panel"><div class="control-heading"><span>Configure match</span><small>Home advantage is applied automatically</small></div><label>Home club<select id="home-select"></select></label><button class="swap-button" id="swap-teams">Swap home / away ↔</button><label>Away club<select id="away-select"></select></label></div>
+          <div class="lab-output panel" id="lab-result"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view-panel="method">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Model</span><i>/</i><span>Methodology</span></div><h1>How the forecast works</h1><p>The site runs entirely on public no-key data and falls back cleanly whenever a public source has not updated yet.</p></div></div>
+        <div class="method-stack">
+          <article class="method-row"><span class="method-number">01</span><div><h3>Structural score model</h3><p>Venue-adjusted attack and defense, Elo, Poisson scoring and Dixon-Coles low-score correction create the underlying score distribution.</p></div></article>
+          <article class="method-row"><span class="method-number">02</span><div><h3>Dynamic recent performance</h3><p>Up to ten completed matches are compared with the model's prior expectations. Recent games count more, opponent strength matters, venue form is tracked separately, and samples are shrunk toward neutral.</p></div></article>
+          <article class="method-row"><span class="method-number">03</span><div><h3>xG & shot quality</h3><p>Football-Data supplies results and shot statistics while public Understat league pages add xG/xGA when available. Shots on target are used as a capped fallback signal, never as a substitute for team strength.</p></div></article>
+          <article class="method-row"><span class="method-number">04</span><div><h3>Rest & fixture congestion</h3><p>Rest-day differences and recent match load apply deliberately small, capped adjustments instead of overwhelming team quality.</p></div></article>
+          <article class="method-row"><span class="method-number">05</span><div><h3>Public market benchmark</h3><p>When Football-Data publishes upcoming EPL odds, the bookmaker margin is removed first. The trained ensemble uses that market evidence only in the regime where it was historically validated.</p></div></article>
+          <article class="method-row"><span class="method-number">06</span><div><h3>Walk-forward learned ensemble</h3><p>A time-ordered training workflow learns how much to trust structural, form, shots, rest and public market features, calibrates on an earlier slice, and reports a later holdout.</p></div></article>
+          <article class="method-row"><span class="method-number">07</span><div><h3>Coherent score markets</h3><p>After the 1X2 ensemble is calibrated, the score lambdas are realigned so correct score, BTTS and totals remain consistent with the final match probabilities.</p></div></article>
+          <article class="method-row"><span class="method-number">08</span><div><h3>Forecast locking</h3><p>At kickoff the prediction freezes. Results are graded against what the model knew beforehand, preventing hindsight leakage.</p></div></article>
+        </div>
+        <div class="validation-panel panel"><div><span class="mini-kicker">Evaluation policy</span><h2>Accuracy has to survive unseen matches.</h2><p>The currently enabled model is benchmarked on a time-ordered 2025/26 holdout. New features are only promoted after they improve out-of-sample probability quality.</p></div><div class="validation-grid"><div><strong>0.633</strong><span>v3 holdout Brier</span></div><div><strong>1.047</strong><span>v3 holdout log loss</span></div><div><strong>190</strong><span>holdout matches</span></div><div><strong>Frozen</strong><span>forecast at kickoff</span></div></div></div>
+        <div class="sources-panel panel"><h3>Data sources</h3><div class="source-list">
+          <a href="https://www.premierleague.com/en/news/4675097/all-380-fixtures-for-202627-premier-league-season" target="_blank" rel="noreferrer"><span>Official schedule</span><strong>PremierLeague.com ↗</strong></a>
+          <a href="https://www.football-data.co.uk/englandm.php" target="_blank" rel="noreferrer"><span>Results, shots & historical odds</span><strong>Football-Data.co.uk ↗</strong></a>
+          <a href="https://understat.com/league/EPL/2026" target="_blank" rel="noreferrer"><span>Public xG / xGA</span><strong>Understat ↗</strong></a>
+        </div></div>
+      </section>
     </main>
-    <aside class="right-rail"><div class="insight-card model-signal-card"><div class="insight-top"><span>Power leader</span><span class="signal-icon">↗</span></div><div class="signal-team" id="signal-team"></div><div class="signal-power"><strong id="signal-power">—</strong><span>/ 100</span></div><div class="signal-bars"><div><span>Attack</span><b><i id="signal-attack"></i></b></div><div><span>Defense</span><b><i id="signal-defense"></i></b></div></div></div><div class="insight-card"><div class="insight-top"><span>Next kickoff</span><span>⌚</span></div><div id="next-kickoff" class="next-kickoff"></div></div><div class="insight-card"><div class="insight-top"><span>Quick table</span><button class="text-button" data-view-target="table">Full table</button></div><div class="quick-table" id="quick-table"></div></div><div class="insight-card refresh-card"><span class="mini-kicker">Data freshness</span><strong id="last-sync">Not synced yet</strong><p>GitHub Actions refreshes the prediction snapshot hourly and can also be run manually. The button below reloads the newest committed snapshot.</p><button class="full-button" id="refresh-data-secondary">Reload latest snapshot</button></div></aside>
+
+    <aside class="right-rail">
+      <div class="insight-card model-signal-card"><div class="insight-top"><span>Power leader</span><span class="signal-icon">↗</span></div><div class="signal-team" id="signal-team"></div><div class="signal-power"><strong id="signal-power">—</strong><span>/ 100</span></div><div class="signal-bars"><div><span>Attack</span><b><i id="signal-attack"></i></b></div><div><span>Defense</span><b><i id="signal-defense"></i></b></div></div></div>
+      <div class="insight-card"><div class="insight-top"><span>Next kickoff</span><span>⌚</span></div><div id="next-kickoff" class="next-kickoff"></div></div>
+      <div class="insight-card"><div class="insight-top"><span>Quick table</span><button class="text-button" data-view-target="table">Full table</button></div><div class="quick-table" id="quick-table"></div></div>
+      <div class="insight-card refresh-card"><span class="mini-kicker">Data freshness</span><strong id="last-sync">Not synced yet</strong><p>GitHub Actions checks the public no-key sources every two hours and can also be run manually. The button below reloads the newest committed snapshot.</p><button class="full-button" id="refresh-data-secondary">Reload latest snapshot</button></div>
+    </aside>
   </div>
-  <footer class="site-footer"><div><strong>PL Forecast</strong><span>Independent forecasting project. Predictions are estimates, not betting advice.</span></div><div><span>2026/27</span><span>Forecasts freeze at kickoff.</span></div></footer><div class="toast" id="toast" role="status" aria-live="polite"></div><script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="app-v3.js"></script>
+
+  <footer class="site-footer"><div><strong>PL Forecast</strong><span>Independent forecasting project. Predictions are estimates, not betting advice.</span></div><div><span>2026/27</span><span>Forecasts freeze at kickoff.</span></div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="app-v3.js"></script>
 </body>
 </html>
