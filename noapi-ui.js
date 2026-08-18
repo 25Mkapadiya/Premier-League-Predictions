@@ -1,6 +1,7 @@
 (()=>{
 'use strict';
 const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+function rewriteVersion(){const v=document.querySelector('.heading-stamp strong');if(v)v.textContent=window.LIVE_DATA?.meta?.predictionEngine?.version||'4.1'}
 function rewriteHealth(){
   const root=document.querySelector('#model-health-panel');
   if(!root)return;
@@ -18,7 +19,7 @@ function rewriteValidation(){
   if(grid)grid.innerHTML='<div><strong>0.650</strong><span>no-market Brier</span></div><div><strong>1.071</strong><span>no-market log loss</span></div><div><strong>0.633</strong><span>market-model Brier</span></div><div><strong>190</strong><span>holdout matches</span></div>';
 }
 function rewriteLab(){const note=document.querySelector('.lab-note');if(note)note.textContent='The Matchup Lab intentionally uses the structural model only. Scheduled fixtures can add timestamped form, xG/shot data, rest, live Elo movement and public market evidence when available.'}
-const observer=new MutationObserver(()=>{rewriteHealth();rewriteValidation();rewriteLab()});observer.observe(document.documentElement,{childList:true,subtree:true});
-window.addEventListener('DOMContentLoaded',()=>{rewriteHealth();rewriteValidation();rewriteLab()});
-setTimeout(()=>{rewriteHealth();rewriteValidation();rewriteLab()},0);
+function rewrite(){rewriteVersion();rewriteHealth();rewriteValidation();rewriteLab()}
+const observer=new MutationObserver(rewrite);observer.observe(document.documentElement,{childList:true,subtree:true});
+window.addEventListener('DOMContentLoaded',rewrite);setTimeout(rewrite,0);
 })();
