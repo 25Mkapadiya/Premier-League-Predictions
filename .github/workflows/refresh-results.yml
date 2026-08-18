@@ -11,6 +11,8 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    env:
+      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -20,17 +22,20 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Refresh fixture and result snapshot
+      - name: Validate refresh script
+        run: python -m py_compile scripts/refresh_results.py
+
+      - name: Refresh fixtures, results and optional market consensus
         run: python scripts/refresh_results.py
 
       - name: Commit refreshed snapshot
         run: |
           if git diff --quiet -- data/live.js; then
-            echo "No result changes to commit."
+            echo "No data changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/live.js
-          git commit -m "Refresh Premier League results"
+          git commit -m "Refresh Premier League prediction data"
           git push
