@@ -9,6 +9,7 @@ on:
     paths:
       - scripts/train_ensemble.py
       - scripts/train_ensemble_fast.py
+      - scripts/train_nomarket.py
       - scripts/prediction_core.py
       - .github/workflows/train-ensemble.yml
 
@@ -23,51 +24,50 @@ jobs:
   train:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Validate trainer
+      - name: Validate trainers
         run: |
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/train_ensemble.py
           python -m py_compile scripts/train_ensemble_fast.py
-      - name: Train, record status, and publish result
+          python -m py_compile scripts/train_nomarket.py
+      - name: Train market-aware and no-market models
         run: |
           set +e
-          python scripts/train_ensemble_fast.py > /tmp/training.log 2>&1
-          TRAIN_EXIT=$?
+          python scripts/train_ensemble_fast.py > /tmp/market-training.log 2>&1
+          MARKET_EXIT=$?
+          python scripts/train_nomarket.py > /tmp/nomarket-training.log 2>&1
+          NOMARKET_EXIT=$?
           set -e
-          cat /tmp/training.log
-          TRAIN_EXIT="$TRAIN_EXIT" python - <<'PY'
+          cat /tmp/market-training.log
+          cat /tmp/nomarket-training.log
+          MARKET_EXIT="$MARKET_EXIT" NOMARKET_EXIT="$NOMARKET_EXIT" python - <<'PY'
           import json, os
           from datetime import datetime, timezone
           from pathlib import Path
-          log = Path('/tmp/training.log').read_text(errors='replace')
-          code = int(os.environ['TRAIN_EXIT'])
-          model_path = Path('data/trained_model.json')
-          model = {}
-          if model_path.exists():
-              try: model = json.loads(model_path.read_text())
-              except Exception: pass
-          status = {
-              'updated': datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
-              'success': code == 0,
-              'exitCode': code,
-              'modelEnabled': bool(model.get('enabled')),
-              'holdout': model.get('holdout'),
-              'trainingSamples': model.get('trainingSamples', 0),
-              'logTail': log[-3500:],
+          def load(path):
+              try:return json.loads(Path(path).read_text())
+              except Exception:return {}
+          market=load('data/trained_model.json');nomarket=load('data/trained_nomarket.json')
+          status={
+              'updated':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
+              'success':int(os.environ['MARKET_EXIT'])==0 and int(os.environ['NOMARKET_EXIT'])==0,
+              'market':{'exitCode':int(os.environ['MARKET_EXIT']),'enabled':bool(market.get('enabled')),'holdout':market.get('holdout'),'trainingSamples':market.get('trainingSamples',0)},
+              'noMarket':{'exitCode':int(os.environ['NOMARKET_EXIT']),'enabled':bool(nomarket.get('enabled')),'holdout':nomarket.get('holdout'),'trainingSamples':nomarket.get('trainingSamples',0),'promotionRule':nomarket.get('promotionRule')},
+              'marketLogTail':Path('/tmp/market-training.log').read_text(errors='replace')[-2500:],
+              'noMarketLogTail':Path('/tmp/nomarket-training.log').read_text(errors='replace')[-2500:],
           }
-          Path('data/training_status.json').write_text(json.dumps(status, indent=2))
+          Path('data/training_status.json').write_text(json.dumps(status,indent=2))
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/trained_model.json data/training_status.json
+          git add data/trained_model.json data/trained_nomarket.json data/training_status.json
           if ! git diff --cached --quiet; then
-            git commit -m "Record Premier League ensemble training"
+            git commit -m "Retrain no-key Premier League ensembles"
             git push
           fi
-          exit "$TRAIN_EXIT"
+          test "$MARKET_EXIT" -eq 0
+          test "$NOMARKET_EXIT" -eq 0
