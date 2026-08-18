@@ -4,6 +4,15 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "7 * * * *"
+  push:
+    branches: [main]
+    paths:
+      - scripts/prediction_core.py
+      - scripts/refresh_results.py
+      - scripts/external_enrichment.py
+      - scripts/build_predictions.py
+      - scripts/refresh_snapshot.py
+      - .github/workflows/refresh-results.yml
 
 permissions:
   contents: write
