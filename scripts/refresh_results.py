@@ -7,6 +7,7 @@ from prediction_core import ROOT, load_js_assignment, write_js_assignment
 from public_sources import football_data_rows, upcoming_market_rows, understat_matches, team_key, fair_market_from_row, parse_fd_kickoff
 
 LIVE_PATH = ROOT/'data'/'live.js'
+PUBLIC_SOURCE_PAGE='https://www.football-data.co.uk/englandm.php'
 TEAMS=['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Coventry','Crystal Palace','Everton','Fulham','Hull','Ipswich','Leeds','Liverpool','Man City','Man United','Newcastle',"Nott'm Forest",'Sunderland','Tottenham']
 
 
@@ -29,33 +30,38 @@ def num(row,key):
 
 def main():
     live=load_js_assignment(LIVE_PATH,'window.LIVE_DATA = '); fixtures=live.get('fixtures') or []
-    rows, fd_meta=football_data_rows(); results={}
+    rows,fd_meta=football_data_rows();results={}
     for row in rows:
-        home,away=team_key(row.get('HomeTeam')),team_key(row.get('AwayTeam'))
-        hs,as_=num(row,'FTHG'),num(row,'FTAG')
+        home,away=team_key(row.get('HomeTeam')),team_key(row.get('AwayTeam'));hs,as_=num(row,'FTHG'),num(row,'FTAG')
         if not home or not away or hs is None or as_ is None:continue
         results[(home,away)]={'homeScore':hs,'awayScore':as_,'kickoff':parse_fd_kickoff(row),
             'stats':{k:num(row,k) for k in ('HS','AS','HST','AST') if num(row,k) is not None},'closingOdds':fair_market_from_row(row)}
-    markets, market_meta=upcoming_market_rows(); understat, xg_meta=understat_matches(); table=base_table(); finals=0
-    now=datetime.now(timezone.utc)
+    markets,market_meta=upcoming_market_rows();understat,xg_meta=understat_matches();table=base_table();finals=0;now=datetime.now(timezone.utc)
     for f in fixtures:
-        key=(f.get('home'),f.get('away')); result=results.get(key)
+        key=(f.get('home'),f.get('away'));result=results.get(key)
         if result:
             f['status']='final';f['homeScore']=result['homeScore'];f['awayScore']=result['awayScore'];f['minutes']=90;f['stats']=result['stats'];finals+=1
             if result.get('kickoff') and not f.get('kickoff'):f['kickoff']=result['kickoff']
             apply_result(table,f['home'],f['away'],result['homeScore'],result['awayScore'])
             if result.get('closingOdds'):f['closingOdds']=result['closingOdds']
-        else:
+        elif fd_meta.get('connected'):
             ko=f.get('kickoff');dt=None
             try:dt=datetime.fromisoformat(ko.replace('Z','+00:00')) if ko else None
             except ValueError:pass
-            f['status']='live' if dt and dt<=now and f.get('homeScore') is not None else 'upcoming';f['minutes']=f.get('minutes') or 0
+            # Football-Data is result-oriented. Without a final row, keep the fixture upcoming.
+            if f.get('status')!='final':f['status']='upcoming';f['homeScore']=None;f['awayScore']=None;f['minutes']=0
+        elif f.get('status')=='final' and f.get('homeScore') is not None and f.get('awayScore') is not None:
+            # Public result feed is temporarily unavailable: retain the last known-good result/table state.
+            apply_result(table,f['home'],f['away'],int(f['homeScore']),int(f['awayScore']));finals+=1
         if key in markets and f.get('status')=='upcoming':f['odds']=markets[key]
         us=understat.get(key)
         if us and us.get('xg') and f.get('status')=='final':f['xg']=us['xg']
-    live['table']=sort_table(table);live['teamSignals']={}
-    live.setdefault('meta',{}).update({'lastUpdated':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'source':'Public no-key sources','seasonStarted':finals>0,
-        'message':f'{finals} finished Premier League matches in the current snapshot.','noApi':True,
+        f.pop('apiContext',None)
+    if fd_meta.get('connected') or finals:
+        live['table']=sort_table(table)
+    live['teamSignals']={}
+    live.setdefault('meta',{}).update({'lastUpdated':datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),'source':'Public no-key sources','sourceUrl':PUBLIC_SOURCE_PAGE,
+        'seasonStarted':finals>0,'message':f'{finals} finished Premier League matches in the current snapshot.','noApi':True,
         'publicSources':{'footballData':fd_meta,'upcomingMarket':market_meta,'understat':xg_meta}})
     for key in ('market','matchStats','enrichment','freeMarket'):
         live['meta'].pop(key,None)
