@@ -31,7 +31,9 @@ See [`docs/ENSEMBLE.md`](docs/ENSEMBLE.md) for the full framework and accuracy r
 
 ## Daily result + market refresh
 
-`.github/workflows/refresh-results.yml` runs `scripts/refresh_results.py` and commits a fresh `data/live.js` snapshot.
+`.github/workflows/refresh-results.yml` runs `scripts/refresh_snapshot.py`. That wrapper runs `scripts/refresh_results.py`, commits a fresh `data/live.js` snapshot, and preserves the last available **pre-match bookmaker snapshot** when a completed fixture disappears from the current odds feed.
+
+This matters for auditing: a finished match should be evaluated against the market information that was actually available before kickoff, rather than silently losing the market component afterward.
 
 The workflow supports:
 
@@ -40,6 +42,7 @@ The workflow supports:
 - FPL fixture/result feed as the primary schedule/result source
 - Football-Data.co.uk result fallback
 - optional The Odds API EPL 1X2 consensus
+- preserved pre-match market snapshots for finished-game review
 
 ### Enable bookmaker consensus
 
@@ -102,16 +105,16 @@ python3 -m http.server 8000
 
 Open `http://localhost:8000`.
 
-To refresh data locally:
+To refresh data locally while preserving prior market snapshots:
 
 ```bash
-python scripts/refresh_results.py
+python scripts/refresh_snapshot.py
 ```
 
 To include market consensus locally:
 
 ```bash
-ODDS_API_KEY="your-key" python scripts/refresh_results.py
+ODDS_API_KEY="your-key" python scripts/refresh_snapshot.py
 ```
 
 ## Project structure
@@ -128,7 +131,8 @@ ODDS_API_KEY="your-key" python scripts/refresh_results.py
 │   ├── live.js
 │   └── context.js
 ├── scripts/
-│   └── refresh_results.py
+│   ├── refresh_results.py
+│   └── refresh_snapshot.py
 ├── .github/
 │   └── workflows/
 │       └── refresh-results.yml
