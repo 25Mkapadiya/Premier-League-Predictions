@@ -3,19 +3,17 @@ name: Refresh Premier League prediction data
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7 * * * *"
-    - cron: "37 10-22 * * *"
+    - cron: "17 */2 * * *"
   push:
     branches: [main]
     paths:
-      - data/trained_model.json
+      - scripts/public_sources.py
       - scripts/prediction_core.py
       - scripts/refresh_results.py
-      - scripts/external_enrichment.py
-      - scripts/fixture_market.py
-      - scripts/availability_sanitizer.py
       - scripts/build_predictions.py
       - scripts/refresh_snapshot.py
+      - data/trained_model.json
+      - data/context.json
       - .github/workflows/refresh-results.yml
 
 permissions:
@@ -28,27 +26,19 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    env:
-      ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-      SPORTMONKS_API_TOKEN: ${{ secrets.SPORTMONKS_API_TOKEN }}
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Validate forecasting scripts
+      - name: Validate no-key forecasting scripts
         run: |
+          python -m py_compile scripts/public_sources.py
           python -m py_compile scripts/prediction_core.py
           python -m py_compile scripts/refresh_results.py
-          python -m py_compile scripts/external_enrichment.py
-          python -m py_compile scripts/fixture_market.py
-          python -m py_compile scripts/availability_sanitizer.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
-      - name: Refresh and build prediction snapshot
+      - name: Refresh public data and forecasts
         run: python scripts/refresh_snapshot.py
       - name: Commit refreshed snapshot
         run: |
@@ -59,5 +49,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/live.js
-          git commit -m "Refresh Premier League prediction data"
+          git commit -m "Refresh no-key Premier League forecasts"
           git push
