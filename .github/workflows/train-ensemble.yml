@@ -3,7 +3,7 @@ name: Train prediction ensemble
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "35 5 * * 1"
   push:
     branches: [main]
     paths:
