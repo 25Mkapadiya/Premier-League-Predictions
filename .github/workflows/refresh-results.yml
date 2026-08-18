@@ -9,11 +9,13 @@ on:
     paths:
       - scripts/public_sources.py
       - scripts/prediction_core.py
+      - scripts/prediction_runtime.py
       - scripts/refresh_results.py
       - scripts/build_predictions.py
       - scripts/refresh_snapshot.py
       - scripts/run_refresh.py
       - data/trained_model.json
+      - data/trained_nomarket.json
       - data/context.json
       - .github/workflows/refresh-results.yml
 
@@ -36,6 +38,7 @@ jobs:
         run: |
           python -m py_compile scripts/public_sources.py
           python -m py_compile scripts/prediction_core.py
+          python -m py_compile scripts/prediction_runtime.py
           python -m py_compile scripts/refresh_results.py
           python -m py_compile scripts/build_predictions.py
           python -m py_compile scripts/refresh_snapshot.py
