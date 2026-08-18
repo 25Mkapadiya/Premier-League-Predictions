@@ -3,143 +3,123 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Data-driven Premier League 2026/27 match predictions using Poisson scoring, Elo strength, and Dixon-Coles correction." />
-  <title>Premier League Predictor 2026/27</title>
+  <meta name="theme-color" content="#080b10" />
+  <meta name="description" content="A dark, data-driven Premier League predictions dashboard with match probabilities, score forecasts, results and standings." />
+  <title>PL Forecast — Premier League Predictions 2026/27</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="page-shell">
-    <header class="site-header">
-      <a class="brand" href="#top" aria-label="Premier League Predictor home">
-        <span class="brand-mark">PL</span>
-        <span>
-          <strong>Predictor</strong>
-          <small>2026/27</small>
-        </span>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" data-view-target="predictions" aria-label="PL Forecast home">
+        <span class="brand-mark"><span>PL</span></span>
+        <span class="brand-copy"><strong>PL Forecast</strong><small>2026/27 prediction desk</small></span>
       </a>
-      <nav class="top-nav" aria-label="Primary navigation">
-        <button class="nav-link active" data-view="predictions">Predictions</button>
-        <button class="nav-link" data-view="lab">Matchup Lab</button>
-        <button class="nav-link" data-view="rankings">Power Rankings</button>
-        <button class="nav-link" data-view="method">Method</button>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="predictions">Predictions</button>
+        <button class="nav-item" data-view="results">Results</button>
+        <button class="nav-item" data-view="table">Table</button>
+        <button class="nav-item" data-view="lab">Matchup Lab</button>
+        <button class="nav-item" data-view="method">Model</button>
       </nav>
-    </header>
+      <div class="sync-cluster">
+        <div class="sync-copy"><span class="sync-dot"></span><span id="sync-label">Snapshot ready</span></div>
+        <button class="icon-button refresh-button" id="refresh-data" title="Reload latest committed results snapshot" aria-label="Refresh results snapshot">↻</button>
+      </div>
+    </div>
+  </header>
 
-    <main id="top">
-      <section class="hero">
-        <div class="hero-copy">
-          <span class="eyebrow"><span class="live-dot"></span> Preseason model snapshot · Aug 17, 2026</span>
-          <h1>Premier League predictions that show their work.</h1>
-          <p>Match probabilities, expected goals, and power ratings built from three seasons of results, home advantage, Elo team strength, and a promoted-team adjustment.</p>
-          <div class="hero-actions">
-            <button class="primary-button" data-jump="fixtures">See Matchweek 1</button>
-            <button class="secondary-button" data-view-target="lab">Build a matchup</button>
-          </div>
+  <div class="mobile-nav" aria-label="Mobile navigation">
+    <button class="mobile-nav-item active" data-view="predictions">Predictions</button>
+    <button class="mobile-nav-item" data-view="results">Results</button>
+    <button class="mobile-nav-item" data-view="table">Table</button>
+    <button class="mobile-nav-item" data-view="lab">Lab</button>
+    <button class="mobile-nav-item" data-view="method">Model</button>
+  </div>
+
+  <div class="app-shell">
+    <aside class="left-rail">
+      <div class="league-card">
+        <div class="league-identity"><div class="league-badge">PL</div><div><span>England</span><strong>Premier League</strong></div></div>
+        <div class="league-meta"><span>2026/27</span><span>20 clubs</span></div>
+      </div>
+      <div class="rail-group">
+        <span class="rail-label">Competition</span>
+        <button class="rail-link active" data-view="predictions"><span>◎</span> Match predictions</button>
+        <button class="rail-link" data-view="results"><span>✓</span> Results</button>
+        <button class="rail-link" data-view="table"><span>≡</span> League table</button>
+        <button class="rail-link" data-view="lab"><span>↔</span> Matchup lab</button>
+        <button class="rail-link" data-view="method"><span>⌁</span> Model details</button>
+      </div>
+      <div class="rail-group">
+        <span class="rail-label">Find a club</span>
+        <label class="search-box" aria-label="Filter matches by club"><span>⌕</span><input id="team-search" type="search" placeholder="Search club" autocomplete="off" /></label>
+        <div class="club-shortcuts" id="club-shortcuts"></div>
+      </div>
+      <div class="rail-note"><span class="mini-kicker">Model policy</span><strong>Probabilities, not promises.</strong><p>Every pick shows the uncertainty behind it. No invented “AI confidence” number.</p></div>
+    </aside>
+
+    <main class="main-column">
+      <section class="view active" data-view-panel="predictions">
+        <div class="page-heading">
+          <div><div class="breadcrumb"><span>Football</span><i>/</i><span>Premier League</span></div><h1>Premier League predictions</h1><p>Score forecasts, 1X2 probabilities and high-signal match markets from the current model snapshot.</p></div>
+          <div class="heading-stamp"><span>MODEL</span><strong>v26.08</strong></div>
         </div>
-        <div class="hero-panel" aria-label="Model summary">
-          <div class="hero-panel-top">
-            <span>MODEL SIGNAL</span>
-            <strong id="hero-signal">Arsenal</strong>
-          </div>
-          <div class="signal-score" id="hero-score">84.0</div>
-          <div class="signal-label">highest preseason power rating</div>
-          <div class="mini-bars">
-            <div><span>Attack</span><b id="hero-attack"></b></div>
-            <div><span>Defense</span><b id="hero-defense"></b></div>
-          </div>
+        <div class="section-tabs" id="prediction-status-tabs"><button class="section-tab active" data-filter="all">All matches</button><button class="section-tab" data-filter="upcoming">Upcoming</button><button class="section-tab" data-filter="final">Finished</button></div>
+        <section class="featured-card" id="featured-match" aria-label="Featured prediction"></section>
+        <div class="content-toolbar"><div><span class="toolbar-label">Schedule</span><div class="week-tabs" id="week-tabs"></div></div><div class="toolbar-count" id="match-count"></div></div>
+        <div class="match-feed" id="fixture-feed"></div>
+        <div class="empty-state hidden" id="fixture-empty"><strong>No matches in this view.</strong><span>Try another matchweek or clear the club filter.</span></div>
+      </section>
+
+      <section class="view" data-view-panel="results">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Premier League</span><i>/</i><span>Results</span></div><h1>Results & prediction review</h1><p>Once a match is finished, the forecast stays beside the actual score so model performance remains auditable.</p></div></div>
+        <div class="result-summary" id="result-summary"></div>
+        <div class="match-feed" id="results-feed"></div>
+        <div class="empty-state" id="results-empty"><strong>No Premier League results yet.</strong><span>The 2026/27 season begins Friday, August 21. Finished scores will appear after a refresh snapshot is committed.</span></div>
+      </section>
+
+      <section class="view" data-view-panel="table">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Premier League</span><i>/</i><span>Standings</span></div><h1>League table</h1><p>Calculated from finished fixtures in the latest data refresh. Before kickoff, all clubs begin on zero.</p></div></div>
+        <div class="table-card"><div class="league-table-head"><span>Pos</span><span>Club</span><span>P</span><span>W</span><span>D</span><span>L</span><span>GD</span><span>Pts</span><span>Form</span></div><div id="league-table"></div></div>
+      </section>
+
+      <section class="view" data-view-panel="lab">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Tools</span><i>/</i><span>Simulator</span></div><h1>Matchup Lab</h1><p>Run any Premier League matchup through the exact same probability engine used in the match feed.</p></div></div>
+        <div class="lab-grid">
+          <div class="lab-controls panel"><div class="control-heading"><span>Configure match</span><small>Home advantage is applied automatically</small></div><label>Home club<select id="home-select"></select></label><button class="swap-button" id="swap-teams">Swap home / away ↔</button><label>Away club<select id="away-select"></select></label></div>
+          <div class="lab-output panel" id="lab-result"></div>
         </div>
       </section>
 
-      <section class="metric-strip" aria-label="Model metrics">
-        <article><strong>1,692</strong><span>source matches</span></article>
-        <article><strong>48.7%</strong><span>rolling 3-way hit rate</span></article>
-        <article><strong>+6.1 pts</strong><span>vs. naive home pick</span></article>
-        <article><strong>20</strong><span>2026/27 clubs modeled</span></article>
-      </section>
-
-      <section class="view active" id="view-predictions" data-view-panel="predictions">
-        <div class="section-heading" id="fixtures">
-          <div>
-            <span class="eyebrow">Opening schedule</span>
-            <h2>Match predictions</h2>
-          </div>
-          <div class="week-tabs" id="week-tabs" aria-label="Matchweek selector"></div>
+      <section class="view" data-view-panel="method">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Model</span><i>/</i><span>Methodology</span></div><h1>How the forecast works</h1><p>A statistical football model with visible assumptions, historical validation and clear limitations.</p></div></div>
+        <div class="method-stack">
+          <article class="method-row"><span class="method-number">01</span><div><h3>Venue-adjusted attack & defense</h3><p>Home and away scoring rates are estimated separately and shrunk toward league averages so short runs do not dominate the forecast.</p></div></article>
+          <article class="method-row"><span class="method-number">02</span><div><h3>Elo team strength</h3><p>Three Premier League seasons contribute an Elo layer that accounts for opponent quality, score margin and home advantage.</p></div></article>
+          <article class="method-row"><span class="method-number">03</span><div><h3>Promotion translation</h3><p>Coventry, Ipswich and Hull are translated from Championship performance to realistic promoted-team Premier League baselines rather than treated as equal-league data.</p></div></article>
+          <article class="method-row"><span class="method-number">04</span><div><h3>Poisson + Dixon-Coles</h3><p>Expected goals generate a score matrix, with a low-score correction for the football-specific dependence around 0-0, 1-0, 0-1 and 1-1.</p></div></article>
         </div>
-        <div class="fixture-grid" id="fixture-grid"></div>
-        <div class="disclaimer">Probabilities are model estimates, not guarantees or betting advice. Fixtures can change after the league publishes broadcast amendments.</div>
-      </section>
-
-      <section class="view" id="view-lab" data-view-panel="lab">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Any matchup</span>
-            <h2>Matchup Lab</h2>
-          </div>
-          <p>Choose a home and away team to inspect the same model used for the fixture cards.</p>
-        </div>
-        <div class="lab-layout">
-          <div class="lab-controls card">
-            <label>Home team<select id="home-select"></select></label>
-            <button id="swap-teams" class="swap-button" aria-label="Swap home and away teams">⇄</button>
-            <label>Away team<select id="away-select"></select></label>
-          </div>
-          <div class="lab-result card" id="lab-result"></div>
-        </div>
-      </section>
-
-      <section class="view" id="view-rankings" data-view-panel="rankings">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Preseason strength</span>
-            <h2>Power rankings</h2>
-          </div>
-          <p>Power combines expected goal difference and team strength. Promoted clubs are translated from Championship performance to Premier League level.</p>
-        </div>
-        <div class="ranking-card card">
-          <div class="ranking-head"><span>Club</span><span>Power</span><span>Attack</span><span>Defense</span><span>2025/26</span></div>
-          <div id="ranking-list"></div>
-        </div>
-      </section>
-
-      <section class="view" id="view-method" data-view-panel="method">
-        <div class="section-heading">
-          <div>
-            <span class="eyebrow">Transparent by design</span>
-            <h2>How the model works</h2>
-          </div>
-          <p>No black-box “AI confidence” score. Every prediction comes from a reproducible statistical pipeline.</p>
-        </div>
-        <div class="method-grid">
-          <article class="card method-card"><span>01</span><h3>Venue-adjusted scoring</h3><p>Home and away attack and defensive rates are estimated separately, then shrunk toward league averages to reduce noise.</p></article>
-          <article class="card method-card"><span>02</span><h3>Elo strength layer</h3><p>Three Premier League seasons feed an Elo rating that responds to results, opponent quality, score margin, and home advantage.</p></article>
-          <article class="card method-card"><span>03</span><h3>Promotion translation</h3><p>Coventry, Ipswich, and Hull are not treated as if Championship scoring transfers directly. Their rates are adjusted to historical promoted-team Premier League levels.</p></article>
-          <article class="card method-card"><span>04</span><h3>Dixon-Coles correction</h3><p>A low-score correction improves Poisson estimates for 0-0, 1-0, 0-1, and 1-1 results, where football scores are not perfectly independent.</p></article>
-        </div>
-        <div class="validation card">
-          <div><span class="eyebrow">Historical check</span><h3>2025/26 rolling backtest</h3><p>The model is evaluated pre-match, updating only with results available before each fixture date.</p></div>
-          <div class="validation-metrics">
-            <div><strong>48.7%</strong><span>top-outcome accuracy</span></div>
-            <div><strong>42.6%</strong><span>always-pick-home baseline</span></div>
-            <div><strong>0.628</strong><span>Brier score</span></div>
-          </div>
-        </div>
-        <div class="sources card">
-          <h3>Data sources</h3>
-          <p><a href="https://www.premierleague.com/en/news/4675097/all-380-fixtures-for-202627-premier-league-season" target="_blank" rel="noreferrer">PremierLeague.com</a> for the official 2026/27 fixture release.</p>
-          <p><a href="https://www.football-data.co.uk/englandm.php" target="_blank" rel="noreferrer">Football-Data.co.uk</a> for historical Premier League and Championship results.</p>
-          <p><a href="https://arxiv.org/abs/2307.02139" target="_blank" rel="noreferrer">Dixon-Coles methodology reference</a> for low-score dependence in football score models.</p>
-        </div>
+        <div class="validation-panel panel"><div><span class="mini-kicker">Rolling 2025/26 backtest</span><h2>Validated before the outcome was known.</h2></div><div class="validation-grid"><div><strong>48.7%</strong><span>3-way outcome accuracy</span></div><div><strong>42.6%</strong><span>always-home baseline</span></div><div><strong>0.628</strong><span>multiclass Brier</span></div><div><strong>1.042</strong><span>log loss</span></div></div></div>
+        <div class="sources-panel panel"><h3>Data sources</h3><div class="source-list">
+          <a href="https://www.premierleague.com/en/news/4675097/all-380-fixtures-for-202627-premier-league-season" target="_blank" rel="noreferrer"><span>Official schedule</span><strong>PremierLeague.com ↗</strong></a>
+          <a href="https://www.football-data.co.uk/englandm.php" target="_blank" rel="noreferrer"><span>Historical results</span><strong>Football-Data.co.uk ↗</strong></a>
+          <a href="https://fantasy.premierleague.com/api/fixtures/" target="_blank" rel="noreferrer"><span>Refresh feed</span><strong>Fantasy Premier League fixtures ↗</strong></a>
+          <a href="https://arxiv.org/abs/2307.02139" target="_blank" rel="noreferrer"><span>Method reference</span><strong>Dixon-Coles research ↗</strong></a>
+        </div></div>
       </section>
     </main>
 
-    <footer>
-      <span>Premier League Predictor · independent fan project</span>
-      <span>Model snapshot: Aug 17, 2026</span>
-    </footer>
+    <aside class="right-rail">
+      <div class="insight-card model-signal-card"><div class="insight-top"><span>Power leader</span><span class="signal-icon">↗</span></div><div class="signal-team" id="signal-team"></div><div class="signal-power"><strong id="signal-power">—</strong><span>/ 100</span></div><div class="signal-bars"><div><span>Attack</span><b><i id="signal-attack"></i></b></div><div><span>Defense</span><b><i id="signal-defense"></i></b></div></div></div>
+      <div class="insight-card"><div class="insight-top"><span>Next kickoff</span><span>⌚</span></div><div id="next-kickoff" class="next-kickoff"></div></div>
+      <div class="insight-card"><div class="insight-top"><span>Quick table</span><button class="text-button" data-view-target="table">Full table</button></div><div class="quick-table" id="quick-table"></div></div>
+      <div class="insight-card refresh-card"><span class="mini-kicker">Data freshness</span><strong id="last-sync">Not synced yet</strong><p>Results are stored as a versioned snapshot so GitHub Pages stays stable. A GitHub Action can refresh it daily or on demand.</p><button class="full-button" id="refresh-data-secondary">Reload latest snapshot</button></div>
+    </aside>
   </div>
 
-  <script src="data/model.js"></script>
-  <script src="data/fixtures.js"></script>
-  <script src="app.js"></script>
+  <footer class="site-footer"><div><strong>PL Forecast</strong><span>Independent prediction project. Not affiliated with the Premier League or its clubs.</span></div><div><span>Model snapshot: Aug 17, 2026</span><span>Fixtures subject to change.</span></div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="app.js"></script>
 </body>
 </html>
