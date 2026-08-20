@@ -40,11 +40,21 @@ function card(p){
   </article>`;
 }
 
+function groupLabel(slot){return slot==='bench'?'Bench':'Starting XI'}
+
 function render(){
   const picks=D.picks||[],unmatched=D.unmatched||[];
   const feed=$('#draft-feed'),empty=$('#draft-empty'),unmatchedBox=$('#draft-unmatched');
   if(!feed)return;
-  feed.innerHTML=picks.map(card).join('');
+  const groups=new Map();
+  for(const p of picks){
+    const slot=p.input?.slot==='bench'?'bench':'start';
+    if(!groups.has(slot))groups.set(slot,[]);
+    groups.get(slot).push(p);
+  }
+  feed.innerHTML=['start','bench'].filter(s=>groups.has(s)).map(slot=>
+    `<div class="draft-group"><span class="draft-group-label">${groupLabel(slot)}</span><div class="draft-feed-grid">${groups.get(slot).map(card).join('')}</div></div>`
+  ).join('');
   const hasAny=(D.picks&&D.picks.length)||(D.unmatched&&D.unmatched.length);
   if(empty)empty.classList.toggle('hidden',!!hasAny);
   if(unmatchedBox){

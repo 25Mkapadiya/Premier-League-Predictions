@@ -1,3 +1,19 @@
 {
-  "picks": []
+  "picks": [
+    {"team": "Aston Villa", "player": "Martinez", "slot": "start"},
+    {"team": "Man City", "player": "Guéhi", "slot": "start"},
+    {"team": "Tottenham", "player": "Pedro Porro", "slot": "start"},
+    {"team": "Chelsea", "player": "James", "slot": "start"},
+    {"team": "Arsenal", "player": "Saka", "slot": "start"},
+    {"team": "Man City", "player": "Foden", "slot": "start"},
+    {"team": "Man United", "player": "Tielemans", "slot": "start"},
+    {"team": "Arsenal", "player": "Merino", "slot": "start"},
+    {"team": "Arsenal", "player": "Zubimendi", "slot": "start"},
+    {"team": "Arsenal", "player": "Havertz", "slot": "start"},
+    {"team": "Man City", "player": "Marmoush", "slot": "start"},
+    {"team": "Everton", "player": "Travers", "slot": "bench"},
+    {"team": "Bournemouth", "player": "Rodríguez", "slot": "bench"},
+    {"team": "Everton", "player": "Branthwaite", "slot": "bench"},
+    {"team": "Chelsea", "player": "Gusto", "slot": "bench"}
+  ]
 }

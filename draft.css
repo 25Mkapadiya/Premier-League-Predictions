@@ -1,5 +1,7 @@
 /* My Draft panel: drafted players, real FPL stats, and this project's own fixture forecast. */
-.draft-feed{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.draft-group{margin-bottom:22px}
+.draft-group-label{display:block;color:var(--muted2);font-size:9px;text-transform:uppercase;letter-spacing:.14em;font-weight:850;margin:0 0 10px}
+.draft-feed-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
 .draft-card{border:1px solid var(--border);background:var(--panel);border-radius:13px;padding:14px}
 .draft-card-main{display:flex;align-items:center;gap:10px}
 .draft-badge{width:30px;height:30px;font-size:9px}
