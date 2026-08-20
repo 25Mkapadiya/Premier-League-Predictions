@@ -1,0 +1,1 @@
+window.DRAFT_DATA = {"updated":"2026-08-20T22:25:19.112300Z","source":{"connected":false,"message":"FPL data unavailable: <urlopen error Tunnel connection failed: 403 Forbidden>","url":"https://fantasy.premierleague.com/api/bootstrap-static/"},"picks":[],"unmatched":[]};

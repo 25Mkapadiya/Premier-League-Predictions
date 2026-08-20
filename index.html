@@ -8,6 +8,7 @@
   <title>PL Forecast — Premier League Predictions 2026/27</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="accuracy.css" />
+  <link rel="stylesheet" href="draft.css" />
 </head>
 <body>
   <header class="topbar">
@@ -21,6 +22,7 @@
         <button class="nav-item" data-view="results">Results</button>
         <button class="nav-item" data-view="table">Table</button>
         <button class="nav-item" data-view="lab">Matchup Lab</button>
+        <button class="nav-item" data-view="draft">My Draft</button>
         <button class="nav-item" data-view="method">Model</button>
       </nav>
       <div class="sync-cluster">
@@ -35,6 +37,7 @@
     <button class="mobile-nav-item" data-view="results">Results</button>
     <button class="mobile-nav-item" data-view="table">Table</button>
     <button class="mobile-nav-item" data-view="lab">Lab</button>
+    <button class="mobile-nav-item" data-view="draft">Draft</button>
     <button class="mobile-nav-item" data-view="method">Model</button>
   </div>
 
@@ -50,6 +53,7 @@
         <button class="rail-link" data-view="results"><span>✓</span> Results</button>
         <button class="rail-link" data-view="table"><span>≡</span> League table</button>
         <button class="rail-link" data-view="lab"><span>↔</span> Matchup lab</button>
+        <button class="rail-link" data-view="draft"><span>★</span> My draft</button>
         <button class="rail-link" data-view="method"><span>⌁</span> Model details</button>
       </div>
       <div class="rail-group">
@@ -93,6 +97,13 @@
         </div>
       </section>
 
+      <section class="view" data-view-panel="draft">
+        <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Fantasy</span><i>/</i><span>My draft</span></div><h1>My draft</h1><p>Real season stats and points for the players you drafted, pulled from the public Fantasy Premier League data, paired with this project's own win-probability forecast for each player's next fixture.</p></div></div>
+        <div class="empty-state" id="draft-empty"><strong>No drafted players listed yet.</strong><span>Add picks to <code>data/draft.json</code> (team + player name) and this panel fills in automatically.</span></div>
+        <div class="empty-state hidden" id="draft-unmatched"></div>
+        <div class="draft-feed" id="draft-feed"></div>
+      </section>
+
       <section class="view" data-view-panel="method">
         <div class="page-heading compact-heading"><div><div class="breadcrumb"><span>Model</span><i>/</i><span>Methodology</span></div><h1>How the forecast works</h1><p>The site runs entirely on public no-key data and falls back cleanly whenever a public source has not updated yet.</p></div></div>
         <div class="method-stack">
@@ -124,6 +135,6 @@
 
   <footer class="site-footer"><div><strong>PL Forecast</strong><span>Independent forecasting project. Predictions are estimates, not betting advice.</span></div><div><span>2026/27</span><span>Forecasts freeze at kickoff.</span></div></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="noapi-preload.js"></script><script src="app-v3.js"></script><script src="noapi-ui.js"></script>
+  <script src="data/model.js"></script><script src="data/fixtures.js"></script><script src="data/live.js"></script><script src="data/draft_stats.js"></script><script src="noapi-preload.js"></script><script src="app-v3.js"></script><script src="noapi-ui.js"></script><script src="draft-ui.js"></script>
 </body>
 </html>

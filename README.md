@@ -100,6 +100,23 @@ Both are multinomial (softmax) logistic regressions fitted with **scikit-learn's
 
 A no-market model is promoted only if it beats the structural baseline on **both Brier score and log loss** on the untouched holdout. Training dependencies (`numpy`, `scipy`, `scikit-learn`, pinned in `scripts/requirements-train.txt`) are only needed by the training workflow — serving predictions at request time uses the plain coefficients/intercepts/temperature exported to JSON and has no extra runtime dependency.
 
+## My draft
+
+The **My Draft** tab tracks players you drafted for a fantasy squad. It's still no-key: player stats come from the official Fantasy Premier League site's own public JSON endpoints (the same ones fantasy.premierleague.com's frontend calls), not a paid provider.
+
+To use it, list your picks in `data/draft.json`:
+
+```json
+{
+  "picks": [
+    {"team": "Arsenal", "player": "Saka"},
+    {"team": "Liverpool", "player": "Salah"}
+  ]
+}
+```
+
+`team` should match this project's team names (see `data/model.js`); `player` is matched fuzzily against FPL's player names, so a surname or FPL display name usually works. The `Refresh drafted player stats` workflow (`scripts/refresh_draft.py`) resolves each pick against the FPL API hourly, pulls real points/form/goals/assists/price, and cross-references `data/live.js` for that player's team's next fixture and this project's own win-probability forecast for it, writing the result to `data/draft_stats.js`. A pick that can't be matched (typo, wrong club, player not in the FPL data yet) shows up in the panel with the reason instead of failing silently.
+
 ## Manual context
 
 `data/context.json` can hold a small, timestamped manual adjustment if a major piece of public pre-match information is independently verified, such as a confirmed manager change or extraordinary team news. It is intentionally empty by default.

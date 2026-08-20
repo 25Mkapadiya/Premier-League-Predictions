@@ -4,6 +4,8 @@
 Sources:
 - Football-Data.co.uk downloadable CSV files
 - Understat's public league data request used by its own website
+- The official Fantasy Premier League site's own public JSON endpoints
+  (the same ones fantasy.premierleague.com's own frontend calls)
 
 No authentication, tokens, secrets, or paid feeds are required.
 """
@@ -21,6 +23,9 @@ CURRENT_SEASON_CODE = "2627"
 FOOTBALL_DATA_CURRENT = f"https://www.football-data.co.uk/mmz4281/{CURRENT_SEASON_CODE}/E0.csv"
 FOOTBALL_DATA_FIXTURES = "https://www.football-data.co.uk/fixtures.csv"
 UNDERSTAT_CURRENT = "https://understat.com/getLeagueData/EPL/2026"
+FPL_BOOTSTRAP = "https://fantasy.premierleague.com/api/bootstrap-static/"
+FPL_FIXTURES = "https://fantasy.premierleague.com/api/fixtures/"
+FPL_POSITIONS = {1:'GKP',2:'DEF',3:'MID',4:'FWD'}
 
 ALIASES = {
     'Arsenal':'Arsenal','Aston Villa':'Aston Villa','AFC Bournemouth':'Bournemouth','Bournemouth':'Bournemouth',
@@ -133,6 +138,27 @@ def understat_matches(url=UNDERSTAT_CURRENT):
         if hxg is not None and axg is not None:item['xg']={'home':hxg,'away':axg,'source':'Understat public EPL data'}
         out[(home,away)]=item
     return out,{'connected':True,'matches':len(out),'url':url}
+
+
+def fpl_bootstrap():
+    """Fetch the FPL site's own public bootstrap payload: every player, every
+    club, and the current gameweek. No API key -- this is the same JSON the
+    fantasy.premierleague.com frontend itself fetches."""
+    try:
+        payload=json.loads(request_bytes(FPL_BOOTSTRAP).decode('utf-8',errors='replace'))
+    except Exception as exc:
+        return None,{'connected':False,'message':f'FPL data unavailable: {exc}','url':FPL_BOOTSTRAP}
+    teams_by_id={t['id']:t for t in payload.get('teams') or []}
+    return {'elements':payload.get('elements') or [],'teams_by_id':teams_by_id,'events':payload.get('events') or []},\
+        {'connected':True,'players':len(payload.get('elements') or []),'url':FPL_BOOTSTRAP}
+
+
+def fpl_fixtures():
+    try:
+        rows=json.loads(request_bytes(FPL_FIXTURES).decode('utf-8',errors='replace'))
+    except Exception as exc:
+        return [],{'connected':False,'message':f'FPL fixtures unavailable: {exc}','url':FPL_FIXTURES}
+    return rows,{'connected':True,'rows':len(rows),'url':FPL_FIXTURES}
 
 
 def parse_fd_kickoff(row):

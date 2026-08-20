@@ -1,0 +1,21 @@
+/* My Draft panel: drafted players, real FPL stats, and this project's own fixture forecast. */
+.draft-feed{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.draft-card{border:1px solid var(--border);background:var(--panel);border-radius:13px;padding:14px}
+.draft-card-main{display:flex;align-items:center;gap:10px}
+.draft-badge{width:30px;height:30px;font-size:9px}
+.draft-info{min-width:0;flex:1}
+.draft-info strong{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.draft-info span{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.draft-price{color:var(--acid);font-size:12px;font-weight:800}
+.draft-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+.draft-stats div{border:1px solid var(--soft);background:#0d1219;border-radius:8px;padding:7px 8px}
+.draft-stats span{display:block;color:var(--muted2);font-size:8px;text-transform:uppercase}
+.draft-stats strong{display:block;margin-top:2px;font-size:13px}
+.draft-next-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--soft);display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:10px}
+.draft-next-row strong{color:var(--cyan);font-size:10px}
+.draft-next-empty{color:var(--muted2)}
+.draft-flag{margin-top:10px;padding:7px 9px;border-radius:8px;background:rgba(255,173,92,.08);border:1px solid rgba(255,173,92,.2);color:var(--orange);font-size:9px}
+#draft-empty code{background:#0d1219;border:1px solid var(--soft);border-radius:5px;padding:2px 5px;font-size:9px}
+#draft-unmatched{border-color:rgba(255,109,109,.22);background:rgba(255,109,109,.04)}
+#draft-unmatched strong{color:var(--red)}
+@media(max-width:590px){.draft-stats{grid-template-columns:repeat(2,1fr)}.draft-next-row{flex-direction:column;align-items:flex-start}}
