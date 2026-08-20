@@ -72,7 +72,13 @@ jobs:
           git add data/trained_model.json data/trained_nomarket.json data/training_status.json
           if ! git diff --cached --quiet; then
             git commit -m "Retrain no-key Premier League ensembles"
-            git push
+            for attempt in 1 2 3 4 5; do
+              git push && break
+              echo "Push rejected (another workflow likely pushed first), rebasing and retrying..."
+              git fetch origin main
+              git rebase origin/main
+              sleep $((attempt * 3))
+            done
           fi
           test "$MARKET_EXIT" -eq 0
           test "$NOMARKET_EXIT" -eq 0
