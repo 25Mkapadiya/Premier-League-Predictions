@@ -1,6 +1,6 @@
 {
-  "updated": "2026-10-12T09:22:26.141752Z",
+  "updated": "2026-10-12T19:52:18.531573Z",
   "success": true,
   "error": null,
-  "logTail": "No-key refresh: fixtures=380 finals=50 FD=True Understat=False market=10\nNo-key predictions: generated=321, preserved=59, locked=59, retro=0, marketModel=1, noMarketModel=320\n"
+  "logTail": "No-key refresh: fixtures=380 finals=50 FD=True Understat=False market=10\nNo-key predictions: generated=320, preserved=60, locked=60, retro=0, marketModel=0, noMarketModel=320\n"
 }
