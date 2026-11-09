@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-02T13:46:37.971823Z",
+  "updated": "2026-11-09T14:14:49.071428Z",
   "success": true,
   "market": {
     "exitCode": 0,
@@ -8,8 +8,8 @@
       "ensemble": {
         "matches": 190,
         "accuracy": 0.4473684210526316,
-        "brier": 0.6358305284440986,
-        "logLoss": 1.0511528144660047
+        "brier": 0.6358305284440894,
+        "logLoss": 1.051152814465993
       },
       "structural": {
         "matches": 190,
@@ -33,8 +33,8 @@
       "ensemble": {
         "matches": 190,
         "accuracy": 0.43157894736842106,
-        "brier": 0.6505591100398472,
-        "logLoss": 1.0717841904506202
+        "brier": 0.6505591100399076,
+        "logLoss": 1.0717841904507075
       },
       "structural": {
         "matches": 190,
@@ -46,6 +46,6 @@
     "trainingSamples": 760,
     "promotionRule": "Enabled only when both Brier score and log loss beat the structural model on the untouched holdout."
   },
-  "marketLogTail": "{\n  \"ensemble\": {\n    \"matches\": 190,\n    \"accuracy\": 0.4473684210526316,\n    \"brier\": 0.6358305284440986,\n    \"logLoss\": 1.0511528144660047\n  },\n  \"structural\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6615942960279846,\n    \"logLoss\": 1.0892507701472471\n  },\n  \"market\": {\n    \"matches\": 190,\n    \"accuracy\": 0.45789473684210524,\n    \"brier\": 0.6347439643495971,\n    \"logLoss\": 1.0501414020994284\n  }\n}\n",
-  "noMarketLogTail": "{\n  \"ensemble\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6505591100398472,\n    \"logLoss\": 1.0717841904506202\n  },\n  \"structural\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6615942960279846,\n    \"logLoss\": 1.0892507701472471\n  }\n}\npromoted= True\n"
+  "marketLogTail": "{\n  \"ensemble\": {\n    \"matches\": 190,\n    \"accuracy\": 0.4473684210526316,\n    \"brier\": 0.6358305284440894,\n    \"logLoss\": 1.051152814465993\n  },\n  \"structural\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6615942960279846,\n    \"logLoss\": 1.0892507701472471\n  },\n  \"market\": {\n    \"matches\": 190,\n    \"accuracy\": 0.45789473684210524,\n    \"brier\": 0.6347439643495971,\n    \"logLoss\": 1.0501414020994284\n  }\n}\n",
+  "noMarketLogTail": "{\n  \"ensemble\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6505591100399076,\n    \"logLoss\": 1.0717841904507075\n  },\n  \"structural\": {\n    \"matches\": 190,\n    \"accuracy\": 0.43157894736842106,\n    \"brier\": 0.6615942960279846,\n    \"logLoss\": 1.0892507701472471\n  }\n}\npromoted= True\n"
 }
