@@ -2,7 +2,7 @@
   "enabled": true,
   "version": "4.0-nomarket",
   "trainer": "sklearn-logistic-regression-cv",
-  "trainedAt": "2026-11-09T14:14:48.889161Z",
+  "trainedAt": "2026-11-16T13:56:27.126518Z",
   "trainingSeasons": [
     "2023/24",
     "2024/25"
